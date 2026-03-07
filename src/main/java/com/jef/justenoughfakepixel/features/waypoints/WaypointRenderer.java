@@ -5,6 +5,7 @@ import com.jef.justenoughfakepixel.config.JefConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -78,16 +79,14 @@ public class WaypointRenderer {
         double vy = mc.getRenderManager().viewerPosY;
         double vz = mc.getRenderManager().viewerPosZ;
 
-        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
-
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glDisable(GL11.GL_LIGHTING);
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        GlStateManager.disableTexture2D();
+        GlStateManager.disableLighting();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GlStateManager.disableDepth();
         GL11.glDepthMask(false);
         GL11.glLineWidth(2.0f);
-        GL11.glDisable(GL11.GL_CULL_FACE);
+        GlStateManager.disableCull();
 
         GL11.glPushMatrix();
         GL11.glTranslated(-vx, -vy, -vz);
@@ -100,10 +99,10 @@ public class WaypointRenderer {
 
         GL11.glPopMatrix();
 
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        GlStateManager.enableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GlStateManager.disableDepth();
 
         GL11.glPushMatrix();
         GL11.glTranslated(-vx, -vy, -vz);
@@ -116,8 +115,13 @@ public class WaypointRenderer {
 
         GL11.glPopMatrix();
 
-        GL11.glPopAttrib();
-        GL11.glColor4f(1f, 1f, 1f, 1f);
+        GL11.glDepthMask(true);
+        GlStateManager.enableDepth();
+        GlStateManager.enableTexture2D();
+        GlStateManager.enableLighting();
+        GlStateManager.enableCull();
+        GlStateManager.disableBlend();
+        GlStateManager.color(1f, 1f, 1f, 1f);
     }
 
     private void tickAdvance(WaypointState state) {
@@ -216,9 +220,9 @@ public class WaypointRenderer {
         // Interpolated eye position in world space — moves smoothly and ignores bob
         Vec3 eyes = mc.thePlayer.getPositionEyes(event.partialTicks);
 
-        GL11.glDisable(GL11.GL_TEXTURE_2D);
-        GL11.glDisable(GL11.GL_LIGHTING);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        GlStateManager.disableTexture2D();
+        GlStateManager.disableLighting();
+        GlStateManager.disableDepth();
         GL11.glDepthMask(false);
         GL11.glLineWidth(2.0f);
 
@@ -230,8 +234,8 @@ public class WaypointRenderer {
         wr.pos(tx, ty, tz).color(ri, gi, bi, ai).endVertex();
         tess.draw();
 
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        GlStateManager.enableTexture2D();
+        GlStateManager.enableDepth();
         GL11.glDepthMask(true);
     }
 
@@ -262,7 +266,7 @@ public class WaypointRenderer {
         GL11.glRotatef(mc.getRenderManager().playerViewX, 1f, 0f, 0f);
         GL11.glScalef(-scale, -scale, scale);
 
-        GL11.glColor4f(1f, 1f, 1f, 1f);
+        GlStateManager.color(1f, 1f, 1f, 1f);
         float startX = -totalW / 2f;
         // Waypoint name — uses labelColour config
         mc.fontRendererObj.drawStringWithShadow(nameStr, startX, 0f, labelColour());

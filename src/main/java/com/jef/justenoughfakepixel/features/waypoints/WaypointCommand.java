@@ -18,7 +18,7 @@ import java.util.*;
 
 public class WaypointCommand extends com.jef.justenoughfakepixel.config.SimpleCommand {
 
-    public static final String PREFIX = "\u00a73[WP]\u00a7b ";
+    public static final String PREFIX = "\u00a73[JW]\u00a7b ";
 
     private static final Minecraft mc = Minecraft.getMinecraft();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -137,14 +137,18 @@ public class WaypointCommand extends com.jef.justenoughfakepixel.config.SimpleCo
 
             case "add": {
                 WaypointGroup target = state.loadedGroup;
-                if (target == null) {
-                    if (args.length >= 2) target = storage.getGroup(args[1]);
-                    if (target == null) { error(sender, "No group loaded. Use /jw load <n> first"); return; }
-                    addWaypoint(sender, target, args.length >= 3 ? args[2] : String.valueOf(target.waypoints.size() + 1));
-                    storage.markDirty(); storage.saveIfDirty();
-                    return;
+                if (target == null) { error(sender, "No group loaded. Use /jw load <n> first"); return; }
+                // detect: /jw add x y z [name]  vs  /jw add [name]
+                if (args.length >= 4 && isDouble(args[1]) && isDouble(args[2]) && isDouble(args[3])) {
+                    double x = parseDoubleSafe(args[1], 0);
+                    double y = parseDoubleSafe(args[2], 0);
+                    double z = parseDoubleSafe(args[3], 0);
+                    String name = args.length >= 5 ? joinFrom(args, 4) : String.valueOf(target.waypoints.size() + 1);
+                    addWaypointAt(sender, target, x, y, z, name);
+                } else {
+                    String name = args.length >= 2 ? joinFrom(args, 1) : String.valueOf(target.waypoints.size() + 1);
+                    addWaypoint(sender, target, name);
                 }
-                addWaypoint(sender, target, args.length >= 2 ? joinFrom(args, 1) : String.valueOf(target.waypoints.size() + 1));
                 storage.markDirty(); storage.saveIfDirty();
                 break;
             }
@@ -154,12 +158,12 @@ public class WaypointCommand extends com.jef.justenoughfakepixel.config.SimpleCo
                 if (args.length < 2) { error(sender, "Usage: /jw insert <index> [name]"); return; }
                 int idx = parseIntSafe(args[1], -1);
                 if (idx < 1 || idx > state.size() + 1) { error(sender, "Index out of range (1\u2013" + (state.size() + 1) + ")"); return; }
-                String wpName = args.length >= 3 ? args[2] : String.valueOf(idx);
+                String JWName = args.length >= 3 ? args[2] : String.valueOf(idx);
                 double bx = Math.floor(mc.thePlayer.posX), by = Math.floor(mc.thePlayer.posY) - 1, bz = Math.floor(mc.thePlayer.posZ);
-                state.loadedGroup.waypoints.add(idx - 1, new WaypointPoint(bx, by, bz, wpName));
+                state.loadedGroup.waypoints.add(idx - 1, new WaypointPoint(bx, by, bz, JWName));
                 renumberNumericNames(state.loadedGroup, idx);
                 storage.markDirty(); storage.saveIfDirty();
-                success(sender, "Inserted &e" + wpName + " &aat index &e" + idx + " &7(" + (int)bx + ", " + (int)by + ", " + (int)bz + ")");
+                success(sender, "Inserted &e" + JWName + " &aat index &e" + idx + " &7(" + (int)bx + ", " + (int)by + ", " + (int)bz + ")");
                 break;
             }
 
@@ -190,14 +194,14 @@ public class WaypointCommand extends com.jef.justenoughfakepixel.config.SimpleCo
                 String name = args[1].toLowerCase();
                 String clip = GuiScreen.getClipboardString();
                 if (clip == null || clip.trim().isEmpty()) { error(sender, "Clipboard is empty"); return; }
-                List<WaypointPoint> wps = parseSoopy(clip.trim());
-                if (wps == null) { error(sender, "Could not parse clipboard as soopy waypoints"); return; }
+                List<WaypointPoint> JWs = parseSoopy(clip.trim());
+                if (JWs == null) { error(sender, "Could not parse clipboard as soopy waypoints"); return; }
                 WaypointGroup g = storage.getGroup(name);
                 if (g == null) g = new WaypointGroup(name);
-                g.waypoints = wps;
+                g.waypoints = JWs;
                 storage.putGroup(g);
                 storage.saveIfDirty();
-                success(sender, "Imported &e" + wps.size() + " &awaypoints into &e" + name);
+                success(sender, "Imported &e" + JWs.size() + " &awaypoints into &e" + name);
                 break;
             }
 
@@ -307,7 +311,7 @@ public class WaypointCommand extends com.jef.justenoughfakepixel.config.SimpleCo
             ChatComponentText root = new ChatComponentText("");
 
             ChatComponentText name = new ChatComponentText(
-                    EnumChatFormatting.AQUA + g.name + EnumChatFormatting.GRAY + " (" + g.waypoints.size() + " wps)");
+                    EnumChatFormatting.AQUA + g.name + EnumChatFormatting.GRAY + " (" + g.waypoints.size() + " JWs)");
             if (g.description != null && !g.description.isEmpty())
                 name.appendText(EnumChatFormatting.DARK_GRAY + " \u2013 " + g.description);
             root.appendSibling(name);
@@ -339,27 +343,35 @@ public class WaypointCommand extends com.jef.justenoughfakepixel.config.SimpleCo
 
     private void addWaypoint(ICommandSender sender, WaypointGroup group, String name) {
         double bx = Math.floor(mc.thePlayer.posX), by = Math.floor(mc.thePlayer.posY) - 1, bz = Math.floor(mc.thePlayer.posZ);
-        group.waypoints.add(new WaypointPoint(bx, by, bz, name));
-        success(sender, "Added &e" + name + " &aat (" + (int)bx + ", " + (int)by + ", " + (int)bz
+        addWaypointAt(sender, group, bx, by, bz, name);
+    }
+
+    private void addWaypointAt(ICommandSender sender, WaypointGroup group, double x, double y, double z, String name) {
+        group.waypoints.add(new WaypointPoint(x, y, z, name));
+        success(sender, "Added &e" + name + " &aat (" + (int)x + ", " + (int)y + ", " + (int)z
                 + ") to &e" + group.name + " &7(&e" + group.waypoints.size() + "&7 total)");
+    }
+
+    private boolean isDouble(String s) {
+        try { Double.parseDouble(s); return true; } catch (NumberFormatException e) { return false; }
     }
 
     private void renumberNumericNames(WaypointGroup g, int fromOneBasedIndex) {
         for (int i = fromOneBasedIndex; i < g.waypoints.size(); i++) {
-            WaypointPoint wp = g.waypoints.get(i);
-            try { if (Integer.parseInt(wp.name) == i) wp.name = String.valueOf(i + 1); }
+            WaypointPoint JW = g.waypoints.get(i);
+            try { if (Integer.parseInt(JW.name) == i) JW.name = String.valueOf(i + 1); }
             catch (NumberFormatException ignored) {}
         }
     }
 
     private String exportSoopy(WaypointGroup g) {
         List<Map<String, Object>> list = new ArrayList<>();
-        for (WaypointPoint wp : g.waypoints) {
+        for (WaypointPoint JW : g.waypoints) {
             Map<String, Object> m = new LinkedHashMap<>();
-            m.put("x", wp.x); m.put("y", wp.y); m.put("z", wp.z);
+            m.put("x", JW.x); m.put("y", JW.y); m.put("z", JW.z);
             m.put("r", 0); m.put("g", 1); m.put("b", 0);
             Map<String, Object> opts = new LinkedHashMap<>();
-            opts.put("name", wp.name != null ? wp.name : "");
+            opts.put("name", JW.name != null ? JW.name : "");
             m.put("options", opts);
             list.add(m);
         }
@@ -371,7 +383,7 @@ public class WaypointCommand extends com.jef.justenoughfakepixel.config.SimpleCo
             if (json.startsWith("[")) {
                 Type type = new TypeToken<List<Map<String, Object>>>() {}.getType();
                 List<Map<String, Object>> raw = GSON.fromJson(json, type);
-                List<WaypointPoint> wps = new ArrayList<>();
+                List<WaypointPoint> JWs = new ArrayList<>();
                 for (int i = 0; i < raw.size(); i++) {
                     Map<String, Object> m = raw.get(i);
                     double x = toDouble(m.get("x")), y = toDouble(m.get("y")), z = toDouble(m.get("z"));
@@ -381,23 +393,23 @@ public class WaypointCommand extends com.jef.justenoughfakepixel.config.SimpleCo
                         Map<String, Object> opts = (Map<String, Object>) m.get("options");
                         if (opts != null && opts.containsKey("name")) name = String.valueOf(opts.get("name"));
                     }
-                    wps.add(new WaypointPoint(x, y, z, name));
+                    JWs.add(new WaypointPoint(x, y, z, name));
                 }
-                wps.sort((a, b) -> {
+                JWs.sort((a, b) -> {
                     try { return Integer.compare(Integer.parseInt(a.name), Integer.parseInt(b.name)); }
                     catch (NumberFormatException e) { return 0; }
                 });
-                return wps;
+                return JWs;
             }
             if (json.matches("(?s).*\\d.*")) {
-                List<WaypointPoint> wps = new ArrayList<>();
+                List<WaypointPoint> JWs = new ArrayList<>();
                 String[] rows = json.split("[\\r\\n]+");
                 for (int i = 0; i < rows.length; i++) {
                     String[] parts = rows[i].trim().split("\\s+");
                     if (parts.length >= 3)
-                        wps.add(new WaypointPoint(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), String.valueOf(i + 1)));
+                        JWs.add(new WaypointPoint(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), String.valueOf(i + 1)));
                 }
-                return wps.isEmpty() ? null : wps;
+                return JWs.isEmpty() ? null : JWs;
             }
         } catch (Exception ignored) {}
         return null;
