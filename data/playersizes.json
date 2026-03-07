@@ -1,5 +1,4 @@
 [
     { "name": "TURKISHKEBAP", "scale": 0.556 },
-    { "name": "birb", "scaleX": 1.5, "scaleY": 0.5, "scaleZ": 1.5 }
-     { "name": "HeadLessMate", "scaleX": 0.5, "scaleY": 1, "scaleZ": 1 }
+      { "name": "test", "scale": -1 },
 ]
