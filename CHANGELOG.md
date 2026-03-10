@@ -7,8 +7,7 @@
 
 ## Additions
 
-* Better GUI for waypoints
-* Tiny kebab
+* WE hate pedos
 * Added repository fetching
   Update checker, and funny stuff
 * Added ItemStack utils
