@@ -12,6 +12,8 @@ A Quality-of-life mod made for fakepixel skyblock.
 * Disable enchant glint
 
 ## Misc
+* Item Stack Utils
+* Brewing Helper
 * Search bar
 * No swap animation
 * Show own nametag
