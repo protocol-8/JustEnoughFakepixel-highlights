@@ -11,6 +11,7 @@ import java.util.function.IntSupplier;
 import com.jef.justenoughfakepixel.features.dungeons.DungeonStats;
 import com.jef.justenoughfakepixel.features.misc.PerformanceHUD;
 import com.jef.justenoughfakepixel.features.waypoints.WaypointGroupGui;
+import com.jef.justenoughfakepixel.features.diana.DianaOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.settings.KeyBinding;
@@ -152,6 +153,19 @@ public class JefConfig {
                 JefConfig::saveConfig,
                 JefConfig::saveConfig
         ).withOverlayScale(feature.misc.hudScale);
+    }
+
+    /** Opens the Diana stats overlay position editor on the next tick. */
+    public static void openDianaEditor() {
+        if (feature == null) return;
+        screenToOpen = new GuiPositionEditor(
+                feature.diana.overlayPos,
+                (IntSupplier) DianaOverlay::getOverlayWidth,
+                (IntSupplier) DianaOverlay::getOverlayHeight,
+                () -> DianaOverlay.renderOverlay(true),
+                JefConfig::saveConfig,
+                JefConfig::saveConfig
+        ).withOverlayScale(feature.diana.overlayScale);
     }
 
     // Tick event
