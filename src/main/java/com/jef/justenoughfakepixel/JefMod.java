@@ -7,6 +7,7 @@ import com.jef.justenoughfakepixel.utils.PartyCommands;
 import com.jef.justenoughfakepixel.features.mining.FetchurHelper;
 import com.jef.justenoughfakepixel.features.general.DamageSplashes;
 import com.jef.justenoughfakepixel.features.general.SkyblockIdTooltip;
+import com.jef.justenoughfakepixel.features.general.CursorResetHandler;
 import com.jef.justenoughfakepixel.features.misc.BrewingStandHelper;
 import com.jef.justenoughfakepixel.features.misc.PerformanceHUD;
 import com.jef.justenoughfakepixel.features.misc.SkillXpDisplay;
@@ -16,6 +17,10 @@ import com.jef.justenoughfakepixel.features.dungeons.DungeonStats;
 import com.jef.justenoughfakepixel.features.waypoints.WaypointCommand;
 import com.jef.justenoughfakepixel.features.waypoints.WaypointRenderer;
 import com.jef.justenoughfakepixel.features.waypoints.WaypointStorage;
+import com.jef.justenoughfakepixel.features.diana.DianaCommand;
+import com.jef.justenoughfakepixel.features.diana.DianaOverlay;
+import com.jef.justenoughfakepixel.features.diana.DianaStats;
+import com.jef.justenoughfakepixel.features.diana.DianaTracker;
 import com.jef.justenoughfakepixel.repo.RepoHandler;
 import com.jef.justenoughfakepixel.repo.JefRepo;
 import com.jef.justenoughfakepixel.repo.VersionChecker;
@@ -53,14 +58,17 @@ public class JefMod {
         JefConfig.init();
         JefRepo.init();
 
-        // Point waypoint storage at the same config directory JEF uses
+        // Point waypoint storage at the same config directory as JEF
         WaypointStorage.getInstance().initFile(JefConfig.configDirectory);
+        // Point diana tracker to JEF config dir
+        DianaStats.getInstance().initFile(JefConfig.configDirectory);
     }
 
     @Mod.EventHandler
     public void clientInit(FMLInitializationEvent event) {
         JefConfig.register();
         WaypointStorage.getInstance().load();
+        DianaStats.getInstance().load();
         MinecraftForge.EVENT_BUS.register(this);
 
 
@@ -79,6 +87,10 @@ public class JefMod {
         MinecraftForge.EVENT_BUS.register(new VersionChecker());
         MinecraftForge.EVENT_BUS.register(new BrewingStandHelper());
         MinecraftForge.EVENT_BUS.register(new ItemStackUtils());
+        MinecraftForge.EVENT_BUS.register(new CursorResetHandler());
+        MinecraftForge.EVENT_BUS.register(new DianaTracker());
+        MinecraftForge.EVENT_BUS.register(new DianaOverlay());
+        ClientCommandHandler.instance.registerCommand(new DianaCommand());
         ClientCommandHandler.instance.registerCommand(new WaypointCommand());
     }
 }

@@ -23,6 +23,41 @@ public class Config {
     public final MiningConfig mining = new MiningConfig();
 
     @Expose
+    @Category(name = "Diana", desc = "Diana event tracking & overlay")
+    public final DianaCategory diana = new DianaCategory();
+
+    public static class DianaCategory {
+
+        @Expose
+        @ConfigOption(name = "Diana Tracker", desc = "Enables tracking when Ancestral Spade is used")
+        @ConfigEditorBoolean
+        public boolean enabled = true;
+
+        @Expose
+        @ConfigOption(name = "Show Overlay", desc = "Show the Diana stats HUD while tracking")
+        @ConfigEditorBoolean
+        public boolean showOverlay = true;
+
+        @Expose
+        @ConfigOption(name = "Overlay Background", desc = "Draw a dark background behind the overlay")
+        @ConfigEditorBoolean
+        public boolean overlayBackground = true;
+
+        @Expose
+        @ConfigOption(name = "Edit Overlay Position", desc = "Drag the overlay to reposition it")
+        @ConfigEditorButton(runnableId = "openDianaEditor", buttonText = "Edit")
+        public boolean editPosDummy = false;
+
+        @Expose
+        @ConfigOption(name = "Overlay Scale", desc = "Size of the Diana stats overlay")
+        @ConfigEditorSliderAnnotation(minValue = 0.5f, maxValue = 3f, minStep = 0.1f)
+        public float overlayScale = 1f;
+
+        @Expose
+        public Position overlayPos = new Position(4, 200);
+    }
+
+    @Expose
     @Category(name = "Dungeons", desc = "Dungeon features")
     public final DungeonsConfig dungeons = new DungeonsConfig();
 
@@ -36,6 +71,9 @@ public class Config {
                 break;
             case "openHudEditor":
                 JefConfig.openHudEditor();
+                break;
+            case "openDianaEditor":
+                JefConfig.openDianaEditor();   // implement in JefConfig alongside openStatsEditor()
                 break;
         }
     }
