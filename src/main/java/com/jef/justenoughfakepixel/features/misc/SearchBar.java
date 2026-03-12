@@ -37,7 +37,7 @@ public class SearchBar {
     private static final ResourceLocation SEARCH_BAR_GOLD =
             new ResourceLocation("justenoughfakepixel", "textures/gui/search_bar_gold.png");
 
-    private static final DecimalFormat CALC_FORMAT = new DecimalFormat("#,##0.##");
+    private static final DecimalFormat CALC_FORMAT = new DecimalFormat("#,##0.##########");
     private static final Pattern STRIP_CODES_PATTERN = Pattern.compile("(?i)§.");
     private static final Map<ResourceLocation, Boolean> RESOURCE_CACHE = new HashMap<>();
 
@@ -436,12 +436,15 @@ public class SearchBar {
                             values.push(new BigDecimal(cmd.numericValue).scaleByPowerOfTen(cmd.exponent));
                             break;
                         case BINOP: {
-                            BigDecimal right = values.pop().setScale(2, RoundingMode.HALF_UP);
-                            BigDecimal left  = values.pop().setScale(2, RoundingMode.HALF_UP);
+                            BigDecimal right = values.pop();
+                            BigDecimal left  = values.pop();
                             switch (cmd.operatorValue) {
                                 case "x": case "*": values.push(left.multiply(right).setScale(2, RoundingMode.HALF_UP)); break;
                                 case "/":
-                                    try { values.push(left.divide(right, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP)); }
+                                    try {
+                                        BigDecimal result = left.divide(right, 10, RoundingMode.HALF_UP).stripTrailingZeros();
+                                        values.push(result.scale() < 2 ? result.setScale(2) : result);
+                                    }
                                     catch (ArithmeticException e) { throw new CalculatorException("Division by zero", cmd.tokenStart, cmd.tokenLength); }
                                     break;
                                 case "+": values.push(left.add(right).setScale(2, RoundingMode.HALF_UP)); break;
