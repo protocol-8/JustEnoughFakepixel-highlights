@@ -41,7 +41,8 @@ import net.minecraftforge.fml.common.network.FMLNetworkEvent;
         modid = JefMod.MODID,
         name = JefMod.NAME,
         version = JefMod.VERSION,
-        clientSideOnly = true
+        clientSideOnly = true,
+        guiFactory = "com.jef.justenoughfakepixel.JefGuiFactory"
 )
 public class JefMod {
 
