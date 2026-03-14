@@ -61,10 +61,10 @@ public class GuiDianaOverlayEditor extends GuiScreen {
         float scale = JefConfig.feature.diana.overlayScale;
 
         overlays = new OverlayEntry[]{
-            new OverlayEntry("Event",    JefConfig.feature.diana.eventOverlayPos,  event::getOverlayWidth, event::getOverlayHeight, () -> event.render(true)),
-            new OverlayEntry("Loot",     JefConfig.feature.diana.lootOverlayPos,   loot::getOverlayWidth,  loot::getOverlayHeight,  () -> loot.render(true)),
-            new OverlayEntry("Inq HP",   JefConfig.feature.diana.inqHealthPos,     inq::getOverlayWidth,   inq::getOverlayHeight,   () -> inq.render(true)),
-            new OverlayEntry("Mob HP",   JefConfig.feature.diana.dianaMobHealthPos,mob::getOverlayWidth,   mob::getOverlayHeight,   () -> mob.render(true)),
+                new OverlayEntry("Event",    JefConfig.feature.diana.eventOverlayPos,  event::getOverlayWidth, event::getOverlayHeight, () -> event.render(true)),
+                new OverlayEntry("Loot",     JefConfig.feature.diana.lootOverlayPos,   loot::getOverlayWidth,  loot::getOverlayHeight,  () -> loot.render(true)),
+                new OverlayEntry(" ",   JefConfig.feature.diana.inqHealthPos,     inq::getOverlayWidth,   inq::getOverlayHeight,   () -> inq.render(true)),
+                new OverlayEntry(" ",   JefConfig.feature.diana.dianaMobHealthPos,mob::getOverlayWidth,   mob::getOverlayHeight,   () -> mob.render(true)),
         };
     }
 
@@ -98,7 +98,7 @@ public class GuiDianaOverlayEditor extends GuiScreen {
             if (e.position.isCenterX()) x -= e.scaledW(scale) / 2;
             if (e.position.isCenterY()) y -= e.scaledH(scale) / 2;
 
-            int boxColor = (i == focusedIndex) ? 0xCC00AAFF : 0x80404040;
+            int boxColor = 0x80404040;
             Gui.drawRect(x, y, x + e.scaledW(scale), y + e.scaledH(scale), boxColor);
             mc.fontRendererObj.drawStringWithShadow(e.label, x + 2, y + 2, 0xFFFFFF);
         }
