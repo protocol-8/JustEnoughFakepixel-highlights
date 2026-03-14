@@ -1,7 +1,8 @@
 package com.jef.justenoughfakepixel.features.diana;
 
+import com.jef.justenoughfakepixel.utils.ChatUtils;
+import com.jef.justenoughfakepixel.utils.ScoreboardUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.StringUtils;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -12,37 +13,27 @@ import java.util.regex.Pattern;
 
 public class DianaTracker {
 
-
-    private static final Pattern BORROW_DIG =
-            Pattern.compile("You dug out a Griffin Borrow! \\(([1-4])/4\\)");
-
-    private static final Pattern MOB_SPAWN =
-            Pattern.compile("Uh oh! You dug out (.+)");
-
-    private static final Pattern RARE_STICK   = Pattern.compile("RARE DROP! Daedalus Stick");
-    private static final Pattern RARE_RELIC   = Pattern.compile("RARE DROP! Minos Relic");
-    private static final Pattern RARE_CHIMERA = Pattern.compile("RARE DROP! Chimera [IVX]+");
-
-    // Mob drops
-    private static final Pattern RARE_SHELMET  = Pattern.compile("RARE DROP! Dwarf Turtle Shelmet");
-    private static final Pattern RARE_REMEDIES = Pattern.compile("RARE DROP! Antique Remedies");
-    private static final Pattern RARE_PLUSHIE  = Pattern.compile("RARE DROP! Crochet Tiger Plushie");
-
-    // Burrow treasure
-    private static final Pattern DROP_FEATHER  = Pattern.compile("RARE DROP! You dug out a Griffin Feather");
-    private static final Pattern DROP_SOUVENIR = Pattern.compile("RARE DROP! You dug out a Washed-up Souvenir");
-    private static final Pattern DROP_CROWN    = Pattern.compile("RARE DROP! You dug out a Crown of Greed");
-    private static final Pattern DROP_COINS    = Pattern.compile("RARE DROP! You dug out ([\\d,]+) Coins");
+    private static final Pattern BORROW_DIG     = Pattern.compile("You dug out a Griffin Borrow! \\(([1-4])/4\\)");
+    private static final Pattern MOB_SPAWN      = Pattern.compile("Uh oh! You dug out (.+)");
+    private static final Pattern RARE_STICK     = Pattern.compile("RARE DROP! Daedalus Stick");
+    private static final Pattern RARE_RELIC     = Pattern.compile("RARE DROP! Minos Relic");
+    private static final Pattern RARE_CHIMERA   = Pattern.compile("RARE DROP! Chimera [IVX]+");
+    private static final Pattern RARE_SHELMET   = Pattern.compile("RARE DROP! Dwarf Turtle Shelmet");
+    private static final Pattern RARE_REMEDIES  = Pattern.compile("RARE DROP! Antique Remedies");
+    private static final Pattern RARE_PLUSHIE   = Pattern.compile("RARE DROP! Crochet Tiger Plushie");
+    private static final Pattern DROP_FEATHER   = Pattern.compile("RARE DROP! You dug out a Griffin Feather");
+    private static final Pattern DROP_SOUVENIR  = Pattern.compile("RARE DROP! You dug out a Washed-up Souvenir");
+    private static final Pattern DROP_CROWN     = Pattern.compile("RARE DROP! You dug out a Crown of Greed");
+    private static final Pattern DROP_COINS     = Pattern.compile("RARE DROP! You dug out ([\\d,]+) Coins");
     private static final Pattern GRIFFIN_DOUBLED = Pattern.compile("Your Griffin doubled your rewards?!");
-
-    // Lootshare
-    private static final Pattern LOOT_SHARE =
-            Pattern.compile("^LOOT SHARE You received loot for assisting");
-
+    private static final Pattern LOOT_SHARE     = Pattern.compile("^LOOT SHARE You received loot for assisting");
 
     private volatile boolean pendingDouble = false;
-
     private final Minecraft mc = Minecraft.getMinecraft();
+
+    private static boolean isInHub() {
+        return ScoreboardUtils.getCurrentLocation() == ScoreboardUtils.Location.HUB;
+    }
 
     @SubscribeEvent
     public void onClientConnect(FMLNetworkEvent.ClientConnectedToServerEvent event) {
@@ -65,28 +56,30 @@ public class DianaTracker {
     @SubscribeEvent
     public void onChat(ClientChatReceivedEvent event) {
         if (mc.thePlayer == null) return;
-        String msg = StringUtils.stripControlCodes(event.message.getFormattedText());
+        if (!ChatUtils.isFromServer(event)) return;
+
+        String msg = ChatUtils.clean(event);
         DianaStats stats = DianaStats.getInstance();
 
-        if (LOOT_SHARE.matcher(msg).find()) {
+        if (LOOT_SHARE.matcher(msg).find() && isInHub()) {
             stats.onLootshare();
-            // If an inq stand just disappeared, it was killed by someone else — reclassify
             if (DianaMobDetect.wasInqKilledByOther()) {
                 stats.getData().totalInqsLootshared++;
                 DianaMobDetect.clearInqDisappear();
             }
         }
 
-        handleBorrowDrops(msg, stats);
-        handleRareMobDrops(msg, stats);
-        handleMobSpawnHP(msg);
+        if (isInHub()) {
+            handleBorrowDrops(msg, stats);
+            handleRareMobDrops(msg, stats);
+            handleMobSpawnHP(msg);
+        }
 
         if (!stats.isTracking()) return;
 
         handleBorrowDig(msg, stats);
         handleMobSpawn(msg, stats);
     }
-
 
     private void handleBorrowDig(String msg, DianaStats stats) {
         if (!BORROW_DIG.matcher(msg).find()) return;
@@ -95,19 +88,16 @@ public class DianaTracker {
         stats.save();
     }
 
-    /** Called outside isTracking() guard so HP overlay fires even when spade is swapped out */
     private void handleMobSpawnHP(String msg) {
         Matcher m = MOB_SPAWN.matcher(msg);
         if (!m.find()) return;
-        String mobName = m.group(1).trim();
-        switch (mobName) {
+        switch (m.group(1).trim()) {
             case "Minotaur":
             case "Minos Champion":
             case "Minos Hunter":
             case "Gaia Construct":
             case "Siamese Lynxes":
                 DianaMobDetect.onNonInqMobDug();
-                break;
         }
     }
 
@@ -116,46 +106,37 @@ public class DianaTracker {
         if (!m.find()) return;
 
         stats.updateActivity();
-        String mobName = m.group(1).trim();
         DianaData d = stats.getData();
         d.totalMobs++;
 
-        switch (mobName) {
+        switch (m.group(1).trim()) {
             case "Minos Inquisitor":
                 d.mobsSinceInq = 0;
                 d.inqsSinceChimera++;
                 d.totalInqs++;
                 break;
             case "Minotaur":
-                d.mobsSinceInq++;
-                d.minotaursSinceStick++;
-                d.totalMinotaurs++;
+                d.mobsSinceInq++; d.minotaursSinceStick++; d.totalMinotaurs++;
                 DianaMobDetect.onNonInqMobDug();
                 break;
             case "Minos Champion":
-                d.mobsSinceInq++;
-                d.champsSinceRelic++;
-                d.totalChamps++;
+                d.mobsSinceInq++; d.champsSinceRelic++; d.totalChamps++;
                 DianaMobDetect.onNonInqMobDug();
                 break;
             case "Gaia Construct":
-                d.mobsSinceInq++;
-                d.totalGaiaConstructs++;
+                d.mobsSinceInq++; d.totalGaiaConstructs++;
                 DianaMobDetect.onNonInqMobDug();
                 break;
             case "Minos Hunter":
-                d.mobsSinceInq++;
-                d.totalMinosHunters++;
+                d.mobsSinceInq++; d.totalMinosHunters++;
                 DianaMobDetect.onNonInqMobDug();
                 break;
             case "Siamese Lynxes":
-                d.mobsSinceInq++;
-                d.totalSiameseLynxes++;
+                d.mobsSinceInq++; d.totalSiameseLynxes++;
                 DianaMobDetect.onNonInqMobDug();
                 break;
             default:
                 d.mobsSinceInq++;
-                break;
         }
         stats.save();
     }
@@ -163,14 +144,12 @@ public class DianaTracker {
     private void handleRareMobDrops(String msg, DianaStats stats) {
         DianaData d = stats.getData();
         boolean changed = false;
-
-        if (RARE_STICK.matcher(msg).find())    { d.minotaursSinceStick = 0; d.totalSticks++;           changed = true; }
-        if (RARE_RELIC.matcher(msg).find())    { d.champsSinceRelic = 0;    d.totalRelics++;            changed = true; }
-        if (RARE_CHIMERA.matcher(msg).find())  { d.inqsSinceChimera = 0;    d.totalChimeras++;          changed = true; }
-        if (RARE_SHELMET.matcher(msg).find())  { d.dwarfTurtleShelmets++;                               changed = true; }
-        if (RARE_REMEDIES.matcher(msg).find()) { d.antiqueRemedies++;                                   changed = true; }
-        if (RARE_PLUSHIE.matcher(msg).find())  { d.crochetTigerPlushies++;                             changed = true; }
-
+        if (RARE_STICK.matcher(msg).find())    { d.minotaursSinceStick = 0; d.totalSticks++;    changed = true; }
+        if (RARE_RELIC.matcher(msg).find())    { d.champsSinceRelic = 0;    d.totalRelics++;    changed = true; }
+        if (RARE_CHIMERA.matcher(msg).find())  { d.inqsSinceChimera = 0;    d.totalChimeras++;  changed = true; }
+        if (RARE_SHELMET.matcher(msg).find())  { d.dwarfTurtleShelmets++;                        changed = true; }
+        if (RARE_REMEDIES.matcher(msg).find()) { d.antiqueRemedies++;                            changed = true; }
+        if (RARE_PLUSHIE.matcher(msg).find())  { d.crochetTigerPlushies++;                       changed = true; }
         if (changed) stats.save();
     }
 
@@ -178,33 +157,26 @@ public class DianaTracker {
         DianaData d = stats.getData();
 
         if (GRIFFIN_DOUBLED.matcher(msg).find()) {
-            if (stats.lastDropType != null) {
-                applyDoubledReward(stats);
-            } else {
-                pendingDouble = true;
-            }
+            if (stats.lastDropType != null) applyDoubledReward(stats);
+            else pendingDouble = true;
             return;
         }
-
 
         if (DROP_FEATHER.matcher(msg).find()) {
             d.griffinFeathers++;
             recordDrop(stats, "feather", 1L);
             if (pendingDouble) { d.griffinFeathers++; consumePending(stats); }
             stats.save();
-
         } else if (DROP_SOUVENIR.matcher(msg).find()) {
             d.souvenirs++;
             recordDrop(stats, "souvenir", 1L);
             if (pendingDouble) { d.souvenirs++; consumePending(stats); }
             stats.save();
-
         } else if (DROP_CROWN.matcher(msg).find()) {
             d.crownsOfGreed++;
             recordDrop(stats, "crown", 1L);
             if (pendingDouble) { d.crownsOfGreed++; consumePending(stats); }
             stats.save();
-
         } else {
             Matcher coins = DROP_COINS.matcher(msg);
             if (coins.find()) {
@@ -224,7 +196,7 @@ public class DianaTracker {
     }
 
     private void consumePending(DianaStats stats) {
-        pendingDouble      = false;
+        pendingDouble = false;
         stats.lastDropType = null;
     }
 
@@ -245,7 +217,6 @@ public class DianaTracker {
         catch (NumberFormatException e) { return 0L; }
     }
 
-
     public static String getBorrowsMessage() {
         DianaStats s = DianaStats.getInstance();
         DianaData  d = s.getData();
@@ -258,10 +229,10 @@ public class DianaTracker {
     public static String getInqMessage() {
         DianaStats s = DianaStats.getInstance();
         DianaData  d = s.getData();
-        double pct   = s.getInqChance();
-        String pctStr = pct >= 0 ? String.format("%.2f%%", pct) : "?";
+        double pct = s.getInqChance();
         return String.format("Inqs:%d(%s) SL:%d LS:%d",
-                d.totalInqs, pctStr, d.mobsSinceInq, d.totalInqsLootshared);
+                d.totalInqs, pct >= 0 ? String.format("%.2f%%", pct) : "?",
+                d.mobsSinceInq, d.totalInqsLootshared);
     }
 
     public static String getMobsMessage() {
@@ -274,26 +245,22 @@ public class DianaTracker {
 
     public static String getChimMessage() {
         DianaData d = DianaStats.getInstance().getData();
-        return String.format("Chim:%d ISL:%d LS:%d",
-                d.totalChimeras, d.inqsSinceChimera, d.totalInqsLootshared);
+        return String.format("Chim:%d ISL:%d LS:%d", d.totalChimeras, d.inqsSinceChimera, d.totalInqsLootshared);
     }
 
     public static String getStickMessage() {
         DianaData d = DianaStats.getInstance().getData();
-        return String.format("Sticks:%d MSL:%d",
-                d.totalSticks, d.minotaursSinceStick);
+        return String.format("Sticks:%d MSL:%d", d.totalSticks, d.minotaursSinceStick);
     }
 
     public static String getRelicMessage() {
         DianaData d = DianaStats.getInstance().getData();
-        return String.format("Relics:%d CSL:%d",
-                d.totalRelics, d.champsSinceRelic);
+        return String.format("Relics:%d CSL:%d", d.totalRelics, d.champsSinceRelic);
     }
 
     public static String getLootMessage() {
         DianaData d = DianaStats.getInstance().getData();
-        return String.format(
-                "F:%d Sh:%d Re:%d Pl:%d St:%d Rl:%d Ch:%d So:%d Cr:%d G:%s",
+        return String.format("F:%d Sh:%d Re:%d Pl:%d St:%d Rl:%d Ch:%d So:%d Cr:%d G:%s",
                 d.griffinFeathers, d.dwarfTurtleShelmets, d.antiqueRemedies, d.crochetTigerPlushies,
                 d.totalSticks, d.totalRelics, d.totalChimeras,
                 d.souvenirs, d.crownsOfGreed, DianaStats.fmtCoins(d.totalCoins));

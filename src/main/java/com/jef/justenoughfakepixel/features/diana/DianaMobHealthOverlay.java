@@ -32,8 +32,7 @@ public class DianaMobHealthOverlay extends JefOverlay {
     @SubscribeEvent
     public void onRenderOverlay(RenderGameOverlayEvent.Post event) {
         if (event.type != RenderGameOverlayEvent.ElementType.ALL) return;
-        if (JefConfig.feature == null
-                || !JefConfig.feature.diana.enabled
+        if (JefConfig.feature == null || !JefConfig.feature.diana.enabled
                 || !JefConfig.feature.diana.showDianaMobHealthOverlay) return;
         render(false);
     }
@@ -45,7 +44,6 @@ public class DianaMobHealthOverlay extends JefOverlay {
 
         String raw = DianaMobDetect.getClosestNonInqMobName();
         if (raw == null) return new ArrayList<>();
-
         return Collections.singletonList(raw);
     }
 }

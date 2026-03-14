@@ -65,6 +65,12 @@ public class Misc {
     @ConfigAccordionId(id = 3)
     public float hudScale = 1f;
 
+
+    @Expose
+    @ConfigOption(name = "Search Bar", desc = "Search bar settings")
+    @ConfigEditorAccordion(id = 10)
+    public boolean searchBarAccordion = false;
+
     @Expose
     @ConfigOption(name = "Enable", desc = "Shows a search bar in supported GUIs")
     @ConfigEditorBoolean
@@ -99,11 +105,6 @@ public class Misc {
     @ConfigOption(name = "Skill XP Display", desc = "Hold SHIFT on a skill item to see XP remaining to max level")
     @ConfigEditorBoolean
     public boolean skillXpDisplay = true;
-
-    @Expose
-    @ConfigOption(name = "Search Bar", desc = "Search bar settings")
-    @ConfigEditorAccordion(id = 10)
-    public boolean searchBarAccordion = false;
 
     @Expose
     @ConfigOption(name = "No Swap Animation", desc = "Removes the item lowering animation when switching hotbar slots")

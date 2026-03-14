@@ -13,31 +13,25 @@ import org.lwjgl.input.Mouse;
 import java.io.IOException;
 import java.util.function.IntSupplier;
 
-/**
- * A single position editor that lets you drag all 4 Diana overlays independently.
- * Click and drag any overlay to move it. Arrow keys move the last clicked overlay.
- * Press R to reset all positions.
- */
 public class GuiDianaOverlayEditor extends GuiScreen {
 
     private final GuiScreen parentScreen;
-    private final Runnable saveCallback;
+    private final Runnable  saveCallback;
 
     private static class OverlayEntry {
-        final String label;
+        final String   label;
         final Position position;
         final Position originalPosition;
-        final IntSupplier w;
-        final IntSupplier h;
+        final IntSupplier w, h;
         final Runnable renderer;
 
         OverlayEntry(String label, Position position, IntSupplier w, IntSupplier h, Runnable renderer) {
-            this.label = label;
-            this.position = position;
+            this.label            = label;
+            this.position         = position;
             this.originalPosition = position.clone();
-            this.w = w;
-            this.h = h;
-            this.renderer = renderer;
+            this.w                = w;
+            this.h                = h;
+            this.renderer         = renderer;
         }
 
         int scaledW(float scale) { return (int)(w.getAsInt() * scale); }
@@ -53,25 +47,24 @@ public class GuiDianaOverlayEditor extends GuiScreen {
         this.parentScreen = parent;
         this.saveCallback = saveCallback;
 
-        DianaEventOverlay    event  = DianaEventOverlay.getInstance();
-        DianaLootOverlay     loot   = DianaLootOverlay.getInstance();
-        InqHealthOverlay     inq    = InqHealthOverlay.getInstance();
+        DianaEventOverlay     event = DianaEventOverlay.getInstance();
+        DianaLootOverlay      loot  = DianaLootOverlay.getInstance();
+        InqHealthOverlay      inq   = InqHealthOverlay.getInstance();
         DianaMobHealthOverlay mob   = DianaMobHealthOverlay.getInstance();
-
         float scale = JefConfig.feature.diana.overlayScale;
 
         overlays = new OverlayEntry[]{
-                new OverlayEntry("Event",    JefConfig.feature.diana.eventOverlayPos,  event::getOverlayWidth, event::getOverlayHeight, () -> event.render(true)),
-                new OverlayEntry("Loot",     JefConfig.feature.diana.lootOverlayPos,   loot::getOverlayWidth,  loot::getOverlayHeight,  () -> loot.render(true)),
-                new OverlayEntry(" ",   JefConfig.feature.diana.inqHealthPos,     inq::getOverlayWidth,   inq::getOverlayHeight,   () -> inq.render(true)),
-                new OverlayEntry(" ",   JefConfig.feature.diana.dianaMobHealthPos,mob::getOverlayWidth,   mob::getOverlayHeight,   () -> mob.render(true)),
+                new OverlayEntry("Event", JefConfig.feature.diana.eventOverlayPos,   event::getOverlayWidth, event::getOverlayHeight, () -> event.render(true)),
+                new OverlayEntry("Loot",  JefConfig.feature.diana.lootOverlayPos,    loot::getOverlayWidth,  loot::getOverlayHeight,  () -> loot.render(true)),
+                new OverlayEntry(" ",     JefConfig.feature.diana.inqHealthPos,      inq::getOverlayWidth,   inq::getOverlayHeight,   () -> inq.render(true)),
+                new OverlayEntry(" ",     JefConfig.feature.diana.dianaMobHealthPos, mob::getOverlayWidth,   mob::getOverlayHeight,   () -> mob.render(true)),
         };
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         super.drawScreen(mouseX, mouseY, partialTicks);
-        ScaledResolution sr = new ScaledResolution(Minecraft.getMinecraft());
+        ScaledResolution sr = new ScaledResolution(mc);
         this.width  = sr.getScaledWidth();
         this.height = sr.getScaledHeight();
         mouseX = Mouse.getX() * width  / mc.displayWidth;
@@ -81,29 +74,23 @@ public class GuiDianaOverlayEditor extends GuiScreen {
 
         float scale = JefConfig.feature.diana.overlayScale;
 
-        // Drag active overlay
         if (draggedIndex >= 0) {
             OverlayEntry e = overlays[draggedIndex];
             grabbedX += e.position.moveX(mouseX - grabbedX, e.scaledW(scale), sr);
             grabbedY += e.position.moveY(mouseY - grabbedY, e.scaledH(scale), sr);
         }
 
-        // Render all overlays + highlight boxes
-        for (int i = 0; i < overlays.length; i++) {
-            OverlayEntry e = overlays[i];
+        for (OverlayEntry e : overlays) {
             e.renderer.run();
-
             int x = e.position.getAbsX(sr, e.scaledW(scale));
             int y = e.position.getAbsY(sr, e.scaledH(scale));
             if (e.position.isCenterX()) x -= e.scaledW(scale) / 2;
             if (e.position.isCenterY()) y -= e.scaledH(scale) / 2;
-
-            int boxColor = 0x80404040;
-            Gui.drawRect(x, y, x + e.scaledW(scale), y + e.scaledH(scale), boxColor);
+            Gui.drawRect(x, y, x + e.scaledW(scale), y + e.scaledH(scale), 0x80404040);
             mc.fontRendererObj.drawStringWithShadow(e.label, x + 2, y + 2, 0xFFFFFF);
         }
 
-        Utils.drawStringCentered("Diana Overlay Editor", mc.fontRendererObj, width / 2, 8,  true, 0xFFFFFF);
+        Utils.drawStringCentered("Diana Overlay Editor",                          mc.fontRendererObj, width / 2,  8, true, 0xFFFFFF);
         Utils.drawStringCentered("Drag overlays to move | R = reset all | ESC = back", mc.fontRendererObj, width / 2, 18, true, 0xAAAAAA);
     }
 
@@ -123,10 +110,8 @@ public class GuiDianaOverlayEditor extends GuiScreen {
             int y = e.position.getAbsY(sr, e.scaledH(scale));
             if (e.position.isCenterX()) x -= e.scaledW(scale) / 2;
             if (e.position.isCenterY()) y -= e.scaledH(scale) / 2;
-
             if (mouseX >= x && mouseX <= x + e.scaledW(scale) && mouseY >= y && mouseY <= y + e.scaledH(scale)) {
-                draggedIndex = i;
-                focusedIndex = i;
+                draggedIndex = focusedIndex = i;
                 grabbedX = mouseX;
                 grabbedY = mouseY;
                 break;
@@ -137,10 +122,7 @@ public class GuiDianaOverlayEditor extends GuiScreen {
     @Override
     protected void mouseReleased(int mouseX, int mouseY, int state) {
         super.mouseReleased(mouseX, mouseY, state);
-        if (draggedIndex >= 0) {
-            saveCallback.run();
-            draggedIndex = -1;
-        }
+        if (draggedIndex >= 0) { saveCallback.run(); draggedIndex = -1; }
     }
 
     @Override
@@ -178,12 +160,11 @@ public class GuiDianaOverlayEditor extends GuiScreen {
             OverlayEntry e = overlays[focusedIndex];
             ScaledResolution sr = new ScaledResolution(mc);
             float scale = JefConfig.feature.diana.overlayScale;
-            boolean shift = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
-            int dist = shift ? 10 : 1;
-            if      (keyCode == Keyboard.KEY_DOWN)  e.position.moveY( dist,  e.scaledH(scale), sr);
-            else if (keyCode == Keyboard.KEY_UP)    e.position.moveY(-dist,  e.scaledH(scale), sr);
-            else if (keyCode == Keyboard.KEY_LEFT)  e.position.moveX(-dist,  e.scaledW(scale), sr);
-            else if (keyCode == Keyboard.KEY_RIGHT) e.position.moveX( dist,  e.scaledW(scale), sr);
+            int dist = (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) ? 10 : 1;
+            if      (keyCode == Keyboard.KEY_DOWN)  e.position.moveY( dist, e.scaledH(scale), sr);
+            else if (keyCode == Keyboard.KEY_UP)    e.position.moveY(-dist, e.scaledH(scale), sr);
+            else if (keyCode == Keyboard.KEY_LEFT)  e.position.moveX(-dist, e.scaledW(scale), sr);
+            else if (keyCode == Keyboard.KEY_RIGHT) e.position.moveX( dist, e.scaledW(scale), sr);
             saveCallback.run();
         }
 

@@ -3,6 +3,7 @@ package com.jef.justenoughfakepixel.features.dungeons;
 import com.jef.justenoughfakepixel.core.JefConfig;
 import com.jef.justenoughfakepixel.core.config.utils.Position;
 import com.jef.justenoughfakepixel.utils.JefOverlay;
+import com.jef.justenoughfakepixel.utils.ChatUtils;
 import com.jef.justenoughfakepixel.utils.ScoreboardUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
@@ -220,10 +221,10 @@ public class DungeonStats extends JefOverlay {
 
     @SubscribeEvent
     public void onChat(ClientChatReceivedEvent event) {
+        if (!ChatUtils.isFromServer(event)) return;
         if (JefConfig.feature == null || !JefConfig.feature.dungeons.dungeonStats) return;
 
-        String clean = net.minecraft.util.StringUtils.stripControlCodes(
-                event.message.getFormattedText()).trim();
+        String clean = ChatUtils.clean(event);
 
         if (!inDungeon) return;
 

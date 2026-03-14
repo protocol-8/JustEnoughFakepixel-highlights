@@ -4,22 +4,16 @@ import com.jef.justenoughfakepixel.core.JefConfig;
 import com.jef.justenoughfakepixel.core.config.editors.ChromaColour;
 import com.jef.justenoughfakepixel.core.config.utils.Position;
 import com.jef.justenoughfakepixel.utils.JefOverlay;
-import net.minecraft.util.StringUtils;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class InqHealthOverlay extends JefOverlay {
 
     private static InqHealthOverlay instance;
-
-    private static final Pattern HP_DISPLAY = Pattern.compile(
-            "([\u00a7§][0-9a-f])?([\\d,\\.]+[MKmk]?)\u00a7f/([\u00a7§][0-9a-f])?([\\d,\\.]+[MKmk]?)HP");
 
     public InqHealthOverlay() {
         super(160, LINE_HEIGHT + PADDING * 2);
@@ -50,7 +44,6 @@ public class InqHealthOverlay extends JefOverlay {
 
         String raw = DianaMobDetect.getClosestInqName();
         if (raw == null) return new ArrayList<>();
-
         return Collections.singletonList(raw);
     }
 }
