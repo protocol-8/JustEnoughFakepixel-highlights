@@ -2,15 +2,20 @@
 # JEF 1.2.0 - 1.2.1 Changelog
 
 ## fixes 
-!pb command refactored
-fixed overlays blocking view of debug, tab
-added skyblock located detection for each feature respectively.
+Fixed inquisitor lootshare detection
+fixed messages sent by players getting tracked by diana tracker
+fixed pos editor gui not opening parent gui after closing
+fixed fetchur
+diana overlays are now seperated
+
+
 
 ## Additions
 
-* DianaTracker
-* Event and loot overlays
-* Party commands for diana
-  !help
+* Custom scoreboard 
+* Better config for all overlay backgrounds
+* search bar pos is now configurable
+* Inquisitor and diana mob health overlays
+* 
 
 

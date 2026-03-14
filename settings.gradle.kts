@@ -23,4 +23,4 @@ plugins {
 }
 
 
-rootProject.name = "jef"
+rootProject.name = "JustEnoughfakepixel"
