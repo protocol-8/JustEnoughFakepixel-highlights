@@ -18,10 +18,16 @@ public class Mining {
     public boolean showFetchurOverlay = true;
 
     @Expose
-    @ConfigOption(name = "Background", desc = "Draw a dark background behind the overlay")
-    @ConfigEditorBoolean
+    @ConfigOption(name = "Background Color", desc = "Background color of the overlay (alpha controls opacity)")
+    @ConfigEditorColour
     @ConfigAccordionId(id = 20)
-    public boolean overlayBackground = true;
+    public String overlayBgColor = "0:136:0:0:0";
+
+    @Expose
+    @ConfigOption(name = "Corner Radius", desc = "Roundness of overlay corners")
+    @ConfigEditorSliderAnnotation(minValue = 0f, maxValue = 12f, minStep = 1f)
+    @ConfigAccordionId(id = 20)
+    public int overlayCornerRadius = 4;
 
     @Expose
     @ConfigOption(name = "Overlay Scale", desc = "Size of the Fetchur overlay")

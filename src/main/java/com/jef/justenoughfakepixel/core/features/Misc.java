@@ -42,10 +42,16 @@ public class Misc {
     public boolean hudVertical = true;
 
     @Expose
-    @ConfigOption(name = "Background", desc = "Draw a dark background behind the HUD")
-    @ConfigEditorBoolean
+    @ConfigOption(name = "Background Color", desc = "Background color of the HUD (alpha controls opacity)")
+    @ConfigEditorColour
     @ConfigAccordionId(id = 3)
-    public boolean hudBackground = true;
+    public String hudBgColor = "0:136:0:0:0";
+
+    @Expose
+    @ConfigOption(name = "Corner Radius", desc = "Roundness of HUD corners")
+    @ConfigEditorSliderAnnotation(minValue = 0f, maxValue = 12f, minStep = 1f)
+    @ConfigAccordionId(id = 3)
+    public int hudCornerRadius = 4;
 
     @Expose
     @ConfigOption(name = "Edit HUD Position", desc = "Drag the HUD to reposition it")
@@ -58,6 +64,28 @@ public class Misc {
     @ConfigEditorSliderAnnotation(minValue = 0.5f, maxValue = 3f, minStep = 0.1f)
     @ConfigAccordionId(id = 3)
     public float hudScale = 1f;
+
+    @Expose
+    @ConfigOption(name = "Enable", desc = "Shows a search bar in supported GUIs")
+    @ConfigEditorBoolean
+    @ConfigAccordionId(id = 10)
+    public boolean searchBar = true;
+
+    @Expose
+    @ConfigOption(name = "Highlight Color", desc = "Color used to highlight matching items in search results")
+    @ConfigEditorColour
+    @ConfigAccordionId(id = 10)
+    public String searchBarHighlightColor = "0:102:255:0:0";
+
+    @Expose
+    @ConfigOption(name = "Edit Search Bar Position", desc = "Drag to reposition the search bar")
+    @ConfigEditorButton(runnableId = "openSearchBarEditor", buttonText = "Edit")
+    @ConfigAccordionId(id = 10)
+    public boolean editSearchBarPosDummy = false;
+
+    @Expose
+    public Position searchBarPos = new Position(4, 4);
+
 
     @Expose
     public Position hudPos = new Position(2, 2);
@@ -76,27 +104,6 @@ public class Misc {
     @ConfigOption(name = "Search Bar", desc = "Search bar settings")
     @ConfigEditorAccordion(id = 10)
     public boolean searchBarAccordion = false;
-
-    @Expose
-    @ConfigOption(name = "Enable", desc = "Shows a search bar in supported GUIs")
-    @ConfigEditorBoolean
-    @ConfigAccordionId(id = 10)
-    public boolean searchBar = true;
-
-    @Expose
-    @ConfigOption(name = "Highlight Color", desc = "Color used to highlight matching items in the search results")
-    @ConfigEditorColour
-    @ConfigAccordionId(id = 10)
-    public String searchBarHighlightColor = "0:102:255:0:0";
-
-    @Expose
-    @ConfigOption(name = "Edit Search Bar Position", desc = "Drag the search bar to reposition it")
-    @ConfigEditorButton(runnableId = "openSearchBarEditor", buttonText = "Edit")
-    @ConfigAccordionId(id = 10)
-    public boolean editSearchBarPosDummy = false;
-
-    @Expose
-    public Position searchBarPos = new Position(0, -30, true, false);
 
     @Expose
     @ConfigOption(name = "No Swap Animation", desc = "Removes the item lowering animation when switching hotbar slots")

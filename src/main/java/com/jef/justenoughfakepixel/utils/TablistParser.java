@@ -2,6 +2,7 @@ package com.jef.justenoughfakepixel.utils;
 
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
+import com.jef.justenoughfakepixel.features.scoreboard.BankParser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiPlayerTabOverlay;
 import net.minecraft.client.network.NetworkPlayerInfo;
@@ -16,16 +17,18 @@ import java.util.List;
 
 public class TablistParser {
 
+    // ── Location cache ────────────────────────────────────────────────────────
     private static ScoreboardUtils.Location currentLocation = ScoreboardUtils.Location.NONE;
 
-    public static ScoreboardUtils.Location getCurrentLocation() {
-        return currentLocation;
-    }
+    public static ScoreboardUtils.Location getCurrentLocation() { return currentLocation; }
 
+    // ── Tick interval ─────────────────────────────────────────────────────────
     private static final int TICK_INTERVAL = 20;
     private int tickCounter = 0;
 
-    private static final Ordering<NetworkPlayerInfo> PLAYER_ORDERING = Ordering.from(new PlayerComparator());
+    // ── Tab-list ordering ─────────────────────────────────────────────────────
+    private static final Ordering<NetworkPlayerInfo> PLAYER_ORDERING =
+            Ordering.from(new PlayerComparator());
 
     private static class PlayerComparator implements Comparator<NetworkPlayerInfo> {
         @Override
@@ -37,11 +40,13 @@ public class TablistParser {
                             o1.getGameType() != WorldSettings.GameType.SPECTATOR,
                             o2.getGameType() != WorldSettings.GameType.SPECTATOR)
                     .compare(t1 != null ? t1.getRegisteredName() : "",
-                             t2 != null ? t2.getRegisteredName() : "")
+                            t2 != null ? t2.getRegisteredName() : "")
                     .compare(o1.getGameProfile().getName(), o2.getGameProfile().getName())
                     .result();
         }
     }
+
+    // ── Events ────────────────────────────────────────────────────────────────
 
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent event) {
@@ -51,46 +56,96 @@ public class TablistParser {
         Minecraft mc = Minecraft.getMinecraft();
         if (mc.thePlayer == null) return;
 
-        GuiPlayerTabOverlay tab = mc.ingameGUI.getTabList();
-        List<NetworkPlayerInfo> infos = PLAYER_ORDERING.sortedCopy(mc.thePlayer.sendQueue.getPlayerInfoMap());
-
-        boolean inServerSection = false;
-
-        for (NetworkPlayerInfo info : infos) {
-            String raw = tab.getPlayerName(info);
-            if (raw == null || raw.isEmpty()) continue;
-
-            if (raw.contains("§3§l Server Info§r")) {
-                inServerSection = true;
-                continue;
-            } else if (raw.contains("§6§lAccount Info§r") || raw.contains("§2§lPlayer Stats§r")) {
-                inServerSection = false;
-                continue;
-            }
-
-            if (!inServerSection) continue;
-
-            String line = net.minecraft.util.StringUtils.stripControlCodes(raw).trim();
-            if (line.isEmpty()) continue;
-
-            if (line.startsWith("Dungeon: ")) {
-                currentLocation = ScoreboardUtils.Location.DUNGEON;
-                return;
-            }
-
-            if (line.startsWith("Server: ")) {
-                String s = line.substring(line.indexOf("Server: ") + 8).trim();
-                int dashDigits = indexOfDashDigits(s);
-                if (dashDigits >= 0) s = s.substring(0, dashDigits + 1);
-                currentLocation = matchLocation(s);
-                return;
-            }
-        }
+        parseTablist(mc);
     }
 
     @SubscribeEvent
     public void onWorldUnload(WorldEvent.Unload event) {
         currentLocation = ScoreboardUtils.Location.NONE;
+        BankParser.clear();
+    }
+
+    // ── Core parser ───────────────────────────────────────────────────────────
+    // Single pass through the tab list — handles both Server Info and Account Info sections.
+
+    private static void parseTablist(Minecraft mc) {
+        GuiPlayerTabOverlay tab = mc.ingameGUI.getTabList();
+        List<NetworkPlayerInfo> infos =
+                PLAYER_ORDERING.sortedCopy(mc.thePlayer.sendQueue.getPlayerInfoMap());
+
+        boolean inServerSection  = false;
+        boolean inAccountSection = false;
+
+        for (NetworkPlayerInfo info : infos) {
+            String raw = tab.getPlayerName(info);
+            if (raw == null || raw.isEmpty()) continue;
+
+            String line = net.minecraft.util.StringUtils.stripControlCodes(raw).trim();
+
+            // ── Section headers ───────────────────────────────────────────
+            if (raw.contains("§3§l Server Info§r")) {
+                inServerSection  = true;
+                inAccountSection = false;
+                continue;
+            }
+            if (raw.contains("§6§lAccount Info") || line.equals("Account Info")) {
+                inAccountSection = true;
+                inServerSection  = false;
+                continue;
+            }
+            // Any other known section header ends both
+            if (raw.contains("§2§lPlayer Stats§r")
+                    || line.equals("Player Stats") || line.equals("Quests")
+                    || line.equals("Party")        || line.equals("Dungeon")) {
+                inServerSection  = false;
+                inAccountSection = false;
+                continue;
+            }
+
+            if (line.isEmpty()) continue;
+
+            // ── Server Info → location ────────────────────────────────────
+            if (inServerSection) {
+                if (line.startsWith("Dungeon: ")) {
+                    currentLocation = ScoreboardUtils.Location.DUNGEON;
+                    inServerSection = false;
+                    continue;
+                }
+                if (line.startsWith("Server: ")) {
+                    String s = line.substring("Server: ".length()).trim();
+                    int dash = indexOfDashDigits(s);
+                    if (dash >= 0) s = s.substring(0, dash + 1);
+                    currentLocation = matchLocation(s);
+                    inServerSection = false;
+                    continue;
+                }
+            }
+
+            // ── Account Info → bank / purse ───────────────────────────────
+            if (inAccountSection) {
+                if (line.startsWith("Bank: ")) {
+                    BankParser.setBank(parseAmount(raw, line.substring("Bank: ".length())));
+                    continue;
+                }
+                if (line.startsWith("Purse: ") || line.startsWith("Piggy: ")) {
+                    int colon = line.indexOf(": ");
+                    String amt = stripColor(raw.substring(raw.indexOf(": ") + 2)).trim();
+                    BankParser.setPurse(amt.isEmpty() ? line.substring(colon + 2) : amt);
+                    continue;
+                }
+            }
+        }
+    }
+
+
+    private static String parseAmount(String raw, String fallback) {
+        String afterColon = raw.substring(raw.indexOf(": ") + 2);
+        String clean = stripColor(afterColon).trim();
+        if (clean.contains(" / ")) {
+            String[] parts = clean.split(" / ", 2);
+            return parts[0].trim() + " §7/ §6" + parts[1].trim();
+        }
+        return clean.isEmpty() ? fallback : clean;
     }
 
     private static ScoreboardUtils.Location matchLocation(String s) {
@@ -108,5 +163,9 @@ public class TablistParser {
                 return i;
         }
         return -1;
+    }
+
+    private static String stripColor(String s) {
+        return s == null ? "" : s.replaceAll("\u00A7[0-9a-fklmnorA-FKLMNOR]", "");
     }
 }

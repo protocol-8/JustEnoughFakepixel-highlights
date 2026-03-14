@@ -20,9 +20,14 @@ public class Dungeons {
     public boolean dungeonStats = false;
 
     @Expose
-    @ConfigOption(name = "Dungeon Overlay Background", desc = "Draw a dark background behind the stats overlay")
-    @ConfigEditorBoolean
-    public boolean statsBackground = true;
+    @ConfigOption(name = "Background Color", desc = "Background color of the stats overlay (alpha controls opacity)")
+    @ConfigEditorColour
+    public String statsBgColor = "0:136:0:0:0";
+
+    @Expose
+    @ConfigOption(name = "Corner Radius", desc = "Roundness of overlay corners")
+    @ConfigEditorSliderAnnotation(minValue = 0f, maxValue = 12f, minStep = 1f)
+    public int statsCornerRadius = 4;
 
     @Expose
     @ConfigOption(name = "Edit Dungeon Overlay Position", desc = "Drag the overlay to reposition it")

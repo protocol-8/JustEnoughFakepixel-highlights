@@ -8,11 +8,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 
-/**
- * Base class for all JEF overlays
- * Subclasses implement getLines(), getPosition(), getScale(), showBackground(),
- * and optionally getBaseWidth() / extraGuard()
- */
+
 public abstract class JefOverlay {
 
     protected static final int LINE_HEIGHT = 10;
@@ -26,27 +22,16 @@ public abstract class JefOverlay {
         this.lastH = defaultH;
     }
 
-    /** Width used by GuiPositionEditor (updated each render pass)*/
     public int getOverlayWidth()  { return lastW; }
-    /** Height used by GuiPositionEditor (updated each render pass) */
     public int getOverlayHeight() { return lastH; }
 
-    /** Lines to render. Return empty list to skip rendering */
     public abstract List<String> getLines(boolean preview);
+    public abstract Position     getPosition();
+    public abstract float        getScale();
 
-    /** Which config Position field to use */
-    public abstract Position getPosition();
+    public abstract int getBgColor();
 
-    /** Which config scale field to use */
-    public abstract float getScale();
-
-    /** Whether to draw the dark background rect */
-    public abstract boolean showBackground();
-
-
-    /** Minimum pixel width before text measurement Default 20 */
-    protected int getBaseWidth() { return 20; }
-
+    public abstract int getCornerRadius();
 
     protected boolean extraGuard() { return true; }
 
@@ -56,8 +41,8 @@ public abstract class JefOverlay {
         List<String> lines = getLines(preview);
         if (lines == null || lines.isEmpty()) return;
 
-        Minecraft mc = Minecraft.getMinecraft();
-        float scale = getScale();
+        Minecraft mc    = Minecraft.getMinecraft();
+        float     scale = getScale();
 
         int w = getBaseWidth();
         for (String line : lines)
@@ -77,8 +62,9 @@ public abstract class JefOverlay {
         GL11.glTranslatef(x, y, 0);
         GL11.glScalef(scale, scale, 1f);
 
-        if (showBackground())
-            Gui.drawRect(-PADDING, -PADDING, w, h - PADDING, 0x88000000);
+        int bgColor = getBgColor();
+        if ((bgColor >>> 24) != 0)
+            drawRoundedRect(-PADDING, -PADDING, w, h - PADDING, getCornerRadius(), bgColor);
 
         int dy = 0;
         for (String line : lines) {
@@ -87,5 +73,25 @@ public abstract class JefOverlay {
         }
 
         GL11.glPopMatrix();
+    }
+
+    protected int getBaseWidth() { return 20; }
+
+
+    protected static void drawRoundedRect(int x, int y, int w, int h, int r, int color) {
+        r = Math.min(r, Math.min(w - x, h - y) / 2);
+        if (r <= 0) { Gui.drawRect(x, y, w, h, color); return; }
+
+        Gui.drawRect(x + r,     y,       w - r, h,     color);
+        Gui.drawRect(x,         y + r,   x + r, h - r, color);
+        Gui.drawRect(w - r,     y + r,   w,     h - r, color);
+
+        for (int i = 0; i < r; i++) {
+            int cut = (int) Math.round(r - Math.sqrt(Math.max(0.0, (double) r * r - (double)(r - i - 1) * (r - i - 1))));
+            Gui.drawRect(x + i,         y + cut,   x + i + 1,   y + r, color);
+            Gui.drawRect(w - i - 1,     y + cut,   w - i,       y + r, color);
+            Gui.drawRect(x + i,         h - r,     x + i + 1,   h - cut, color);
+            Gui.drawRect(w - i - 1,     h - r,     w - i,       h - cut, color);
+        }
     }
 }

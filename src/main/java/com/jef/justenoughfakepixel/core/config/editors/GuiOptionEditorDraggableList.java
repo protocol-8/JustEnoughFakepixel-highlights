@@ -45,6 +45,9 @@ public class GuiOptionEditorDraggableList extends GuiOptionEditor {
         int height = super.getHeight() + 13;
 
         for (int strIndex : activeText) {
+            if (strIndex < 0 || strIndex >= exampleText.length) {
+                continue;
+            }
             String str = exampleText[strIndex];
             height += 10 * str.split("\n").length;
         }
@@ -81,6 +84,10 @@ public class GuiOptionEditorDraggableList extends GuiOptionEditor {
         int i = 0;
         int yOff = 0;
         for (int strIndex : activeText) {
+            if (strIndex < 0 || strIndex >= exampleText.length) {
+                i++;
+                continue;  // Skip invalid indices
+            }
             String str = exampleText[strIndex];
 
             String[] multilines = str.split("\n");

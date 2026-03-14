@@ -5,7 +5,6 @@ import com.jef.justenoughfakepixel.core.config.utils.Position;
 import com.jef.justenoughfakepixel.utils.JefOverlay;
 import com.jef.justenoughfakepixel.utils.ScoreboardUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
@@ -121,9 +120,9 @@ public class DungeonStats extends JefOverlay {
 
     @Override public Position getPosition()    { return JefConfig.feature.dungeons.statsPos; }
     @Override public float    getScale()       { return JefConfig.feature.dungeons.statsScale; }
-    @Override public boolean  showBackground() { return JefConfig.feature.dungeons.statsBackground; }
+    @Override public int      getBgColor()      { return com.jef.justenoughfakepixel.core.config.editors.ChromaColour.specialToChromaRGB(JefConfig.feature.dungeons.statsBgColor); }
+    @Override public int      getCornerRadius() { return JefConfig.feature.dungeons.statsCornerRadius; }
     @Override protected boolean extraGuard()   { return inDungeon && runStart != 0; }
-
 
     @Override
     public void render(boolean preview) {
@@ -151,8 +150,9 @@ public class DungeonStats extends JefOverlay {
         GL11.glTranslatef(x, y, 0);
         GL11.glScalef(scale, scale, 1f);
 
-        if (showBackground())
-            Gui.drawRect(-PADDING, -PADDING, w, h - PADDING, 0x88000000);
+        int bgColor = getBgColor();
+        if ((bgColor >>> 24) != 0)
+            drawRoundedRect(-PADDING, -PADDING, w, h - PADDING, getCornerRadius(), bgColor);
 
         int dy = 0;
         for (String line : lines) {

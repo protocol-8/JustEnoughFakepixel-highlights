@@ -22,9 +22,14 @@ public class Diana {
     public boolean showLootOverlay = true;
 
     @Expose
-    @ConfigOption(name = "Overlay Background", desc = "Draw a dark background behind both overlays")
-    @ConfigEditorBoolean
-    public boolean overlayBackground = true;
+    @ConfigOption(name = "Overlay Background", desc = "Background color for both Diana overlays (alpha controls opacity)")
+    @ConfigEditorColour
+    public String overlayBgColor = "0:136:0:0:0";
+
+    @Expose
+    @ConfigOption(name = "Corner Radius", desc = "Roundness of overlay corners")
+    @ConfigEditorSliderAnnotation(minValue = 0f, maxValue = 12f, minStep = 1f)
+    public int overlayCornerRadius = 4;
 
     @Expose
     @ConfigOption(name = "Overlay Scale", desc = "Size of both Diana overlays")

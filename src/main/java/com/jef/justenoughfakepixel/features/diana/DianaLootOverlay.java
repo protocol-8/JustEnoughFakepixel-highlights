@@ -1,6 +1,7 @@
 package com.jef.justenoughfakepixel.features.diana;
 
 import com.jef.justenoughfakepixel.core.JefConfig;
+import com.jef.justenoughfakepixel.core.config.editors.ChromaColour;
 import com.jef.justenoughfakepixel.core.config.utils.Position;
 import com.jef.justenoughfakepixel.utils.JefOverlay;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -20,10 +21,11 @@ public class DianaLootOverlay extends JefOverlay {
 
     public static DianaLootOverlay getInstance() { return instance; }
 
-    @Override protected int     getBaseWidth()   { return 180; }
-    @Override public Position   getPosition()    { return JefConfig.feature.diana.lootOverlayPos; }
-    @Override public float      getScale()       { return JefConfig.feature.diana.overlayScale; }
-    @Override public boolean    showBackground() { return JefConfig.feature.diana.overlayBackground; }
+    @Override protected int     getBaseWidth()    { return 180; }
+    @Override public Position   getPosition()     { return JefConfig.feature.diana.lootOverlayPos; }
+    @Override public float      getScale()        { return JefConfig.feature.diana.overlayScale; }
+    @Override public int        getBgColor()      { return ChromaColour.specialToChromaRGB(JefConfig.feature.diana.overlayBgColor); }
+    @Override public int        getCornerRadius() { return JefConfig.feature.diana.overlayCornerRadius; }
 
     @SubscribeEvent
     public void onRenderOverlay(RenderGameOverlayEvent.Post event) {
@@ -58,26 +60,17 @@ public class DianaLootOverlay extends JefOverlay {
         lines.add("\u00a76\u00a7lDiana Loot");
 
         String lsSuffix = d.totalInqsLootshared > 0
-                ? String.format("  \u00a77[\u00a7bLS \u00a7f%d\u00a77]", d.totalInqsLootshared)
-                : "";
-        lines.add(String.format("\u00a77Inqs since Chimera: \u00a7f%d%s",
-                d.inqsSinceChimera, lsSuffix));
-
+                ? String.format("  \u00a77[\u00a7bLS \u00a7f%d\u00a77]", d.totalInqsLootshared) : "";
+        lines.add(String.format("\u00a77Inqs since Chimera: \u00a7f%d%s", d.inqsSinceChimera, lsSuffix));
         lines.add(String.format("\u00a7dChimeras: \u00a7f%d", d.totalChimeras));
-
         lines.add(String.format("\u00a71Feathers: \u00a7f%d", d.griffinFeathers));
-
         lines.add(String.format("\u00a72Shelmets: \u00a7f%d  \u00a75Remedies: \u00a7f%d  \u00a75Plushies: \u00a7f%d",
                 d.dwarfTurtleShelmets, d.antiqueRemedies, d.crochetTigerPlushies));
-
         lines.add(String.format("\u00a76Daedalus Sticks: \u00a7f%d  \u00a77(since last: \u00a7f%d\u00a77)",
                 d.totalSticks, d.minotaursSinceStick));
-
         lines.add(String.format("\u00a75Minos Relics: \u00a7f%d  \u00a77(since last: \u00a7f%d\u00a77)",
                 d.totalRelics, d.champsSinceRelic));
-
-        lines.add(String.format("\u00a75Souvenirs: \u00a7f%d  \u00a76Crowns: \u00a7f%d",
-                d.souvenirs, d.crownsOfGreed));
+        lines.add(String.format("\u00a75Souvenirs: \u00a7f%d  \u00a76Crowns: \u00a7f%d", d.souvenirs, d.crownsOfGreed));
         lines.add(String.format("\u00a76Coins: \u00a7f%s", DianaStats.fmtCoins(d.totalCoins)));
 
         return lines;
