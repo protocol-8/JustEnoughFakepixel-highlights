@@ -36,7 +36,8 @@ A Quality-of-life mod made for fakepixel skyblock.
 * Phase timers
 * !pb <floor> party command
 
-
+## Contributors
+Thanks to [Internet Protocol](https://github.com/protocol-8) for adding many awesome features and maintaining the project! 
 
 ## Credits
 This mod uses code from [NotEnoughFakepixel](https://github.com/davidbelesp/NotEnoughFakepixel), [NotEnoughUpdates](https://github.com/Moulberry/NotEnoughUpdates), [Coleweight](https://github.com/Vinxey/coleweight/tree/Beta)
