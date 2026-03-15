@@ -234,18 +234,21 @@ public class CustomScoreboard extends JefOverlay {
                     if (profileTypeRaw != null) lines.add(profileTypeRaw);
                     break;
 
-                case LINE_ISLAND:
+                case LINE_ISLAND: {
                     ScoreboardUtils.Location loc = ScoreboardUtils.getCurrentLocation();
                     if (loc != ScoreboardUtils.Location.NONE) {
                         String name;
                         if (loc == ScoreboardUtils.Location.CRIMSON_ISLE) {
                             name = "Crimson Isles";
+                        } else if (loc == ScoreboardUtils.Location.HUB) {
+                            name = "Skyblock Hub";
                         } else {
                             name = toTitleCase(loc.name());
                         }
                         lines.add("\u32D6 \u00A7b" + name);
                     }
                     break;
+                }
 
                 case LINE_LOCATION:
                     if (locationRaw != null) lines.add(locationRaw);
