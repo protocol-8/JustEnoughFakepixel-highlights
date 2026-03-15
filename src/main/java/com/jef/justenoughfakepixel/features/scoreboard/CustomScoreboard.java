@@ -48,6 +48,7 @@ public class CustomScoreboard extends JefOverlay {
     private static final int LINE_EMPTY5       = 18;
     private static final int LINE_EMPTY6       = 19;
     private static final int LINE_EMPTY7       = 20;
+    private static final int LINE_ISLAND       = 21;
 
     private static final String LOC_SYMBOL_NORMAL = "\u23E3";
     private static final String LOC_SYMBOL_RIFT   = "\u0444";
@@ -116,6 +117,15 @@ public class CustomScoreboard extends JefOverlay {
         return result;
     }
 
+    private String toTitleCase(String s) {
+        StringBuilder result = new StringBuilder();
+        for (String word : s.toLowerCase().split("_")) {
+            result.append(Character.toUpperCase(word.charAt(0)))
+                    .append(word.substring(1))
+                    .append(" ");
+        }
+        return result.toString().trim();
+    }
     @Override
     public List<String> getLines(boolean preview) {
 
@@ -236,6 +246,21 @@ public class CustomScoreboard extends JefOverlay {
                 case LINE_BITS:
                     if (bitsRaw != null) lines.add(bitsRaw);
                     break;
+                case LINE_ISLAND:
+                    ScoreboardUtils.Location loc = ScoreboardUtils.getCurrentLocation();
+                    if (loc != ScoreboardUtils.Location.NONE) {
+
+                        String name;
+
+                        if (loc == ScoreboardUtils.Location.CRIMSON_ISLE) {
+                            name = "Crimson Isles";
+                        } else {
+                            name = toTitleCase(loc.name());
+                        }
+
+                        lines.add("\u32D6 \u00A7b" + name);
+                    }
+                    break;
 
                 case LINE_POWER:
                     String power = MaxwellPowerSync.getPower();
@@ -277,31 +302,15 @@ public class CustomScoreboard extends JefOverlay {
                     break;
 
                 case LINE_EMPTY1:
-                    lines.add("");
-                    break;
-
                 case LINE_EMPTY2:
-                    lines.add("");
-                    break;
-
                 case LINE_EMPTY3:
-                    lines.add("");
-                    break;
-
                 case LINE_EMPTY4:
-                    lines.add("");
-                    break;
-
                 case LINE_EMPTY5:
-                    lines.add("");
-                    break;
-
                 case LINE_EMPTY6:
-                    lines.add("");
-                    break;
-
                 case LINE_EMPTY7:
-                    lines.add("");
+                    if (ScoreboardUtils.isOnSkyblock() && !ScoreboardUtils.isInDungeon()) {
+                        lines.add("");
+                    }
                     break;
             }
         }
