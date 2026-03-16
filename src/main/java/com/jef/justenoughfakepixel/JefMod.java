@@ -1,5 +1,6 @@
 package com.jef.justenoughfakepixel;
 
+import com.jef.justenoughfakepixel.data.ApiHandler;
 import com.jef.justenoughfakepixel.core.JefConfig;
 import com.jef.justenoughfakepixel.core.config.command.SimpleCommandFilter;
 import com.jef.justenoughfakepixel.features.diana.*;
@@ -46,6 +47,7 @@ public class JefMod {
     public void onServerJoin(FMLNetworkEvent.ClientConnectedToServerEvent e) {
         RepoHandler.refresh(JefRepo.KEY_PLAYERSIZES);
         RepoHandler.refresh(JefRepo.KEY_UPDATE);
+        ApiHandler.onServerJoin();
     }
 
     public static JefConfig config;
