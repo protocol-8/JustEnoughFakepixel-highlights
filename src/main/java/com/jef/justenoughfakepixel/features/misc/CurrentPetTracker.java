@@ -109,6 +109,8 @@ public class CurrentPetTracker {
             if (texture == null || texture.isEmpty()) continue;
 
             String formatted = item.getDisplayName();
+// Fix double-encoded § character
+            formatted = formatted.replace("Â§", "§");
             String base = LEVEL_PREFIX.matcher(
                     StringUtils.stripControlCodes(formatted)).replaceFirst("").trim();
 

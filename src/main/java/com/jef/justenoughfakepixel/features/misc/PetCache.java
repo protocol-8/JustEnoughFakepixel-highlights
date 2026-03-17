@@ -50,7 +50,14 @@ public class PetCache {
         try (Reader r = new FileReader(file)) {
             Type type = new TypeToken<Map<String, CachedPet>>(){}.getType();
             Map<String, CachedPet> loaded = GSON.fromJson(r, type);
-            if (loaded != null) pets.putAll(loaded);
+            if (loaded != null) {
+                // sanitize corrupted § on load
+                for (CachedPet pet : loaded.values()) {
+                    if (pet.formattedName != null)
+                        pet.formattedName = pet.formattedName.replace("Â§", "§");
+                }
+                pets.putAll(loaded);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -78,8 +85,21 @@ public class PetCache {
     }
 
     public void update(String baseName, String formattedName, String textureValue) {
-
         baseName = normalizePetName(baseName);
+
+        String starSuffix = "";
+        int starIndex = formattedName.indexOf("✦");
+        if (starIndex > 0) {
+            String before = formattedName.substring(0, starIndex);
+            if (before.length() >= 2 && before.charAt(before.length() - 2) == '\u00a7') {
+                starSuffix = " " + before.substring(before.length() - 2) + "✦";
+            } else {
+                starSuffix = " ✦";
+            }
+        }
+
+        formattedName = formattedName.replace("✦", "").trim();
+        if (!starSuffix.isEmpty()) formattedName = formattedName + starSuffix;
 
         CachedPet existing = pets.get(baseName);
         if (existing != null
