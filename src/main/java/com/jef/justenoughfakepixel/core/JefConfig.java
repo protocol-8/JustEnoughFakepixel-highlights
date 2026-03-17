@@ -9,8 +9,10 @@ import com.jef.justenoughfakepixel.core.config.editors.GuiPositionEditor;
 import com.jef.justenoughfakepixel.features.misc.SearchBar;
 import com.jef.justenoughfakepixel.features.diana.DianaEventOverlay;
 import com.jef.justenoughfakepixel.features.diana.GuiDianaOverlayEditor;
+import com.jef.justenoughfakepixel.features.general.GyroWandOverlay;
 import com.jef.justenoughfakepixel.features.mining.FetchurOverlay;
 import com.jef.justenoughfakepixel.features.dungeons.DungeonStats;
+import com.jef.justenoughfakepixel.features.misc.CurrentPetOverlay;
 import com.jef.justenoughfakepixel.features.misc.PerformanceHUD;
 import com.jef.justenoughfakepixel.features.scoreboard.CustomScoreboard;
 import com.jef.justenoughfakepixel.features.waypoints.WaypointGroupGui;
@@ -27,7 +29,6 @@ import org.lwjgl.input.Keyboard;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-
 
 public class JefConfig {
 
@@ -49,25 +50,19 @@ public class JefConfig {
     public static GuiScreen screenToOpen = null;
     private static int screenTicks = 0;
     private static boolean waypointManagerKeyWasDown = false;
-
     private static boolean registered = false;
 
     public static void register() {
         if (registered) return;
-
         init();
         MinecraftForge.EVENT_BUS.register(new JefConfig());
         ClientRegistry.registerKeyBinding(openGuiKey);
         ClientCommandHandler.instance.registerCommand(new JefCommand());
-
         registered = true;
     }
 
     public static void init() {
-        if (!configDirectory.exists()) {
-            configDirectory.mkdirs();
-        }
-
+        if (!configDirectory.exists()) configDirectory.mkdirs();
         configFile = new File(configDirectory, "config.json");
         loadConfig();
     }
@@ -76,14 +71,11 @@ public class JefConfig {
         if (configFile.exists()) {
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(Files.newInputStream(configFile.toPath()), StandardCharsets.UTF_8))) {
-
                 feature = GSON.fromJson(reader, Config.class);
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-
         if (feature == null) {
             feature = new Config();
             saveConfig();
@@ -92,16 +84,11 @@ public class JefConfig {
 
     public static void saveConfig() {
         try {
-            if (!configFile.exists()) {
-                configFile.createNewFile();
-            }
-
+            if (!configFile.exists()) configFile.createNewFile();
             try (BufferedWriter writer = new BufferedWriter(
                     new OutputStreamWriter(Files.newOutputStream(configFile.toPath()), StandardCharsets.UTF_8))) {
-
                 writer.write(GSON.toJson(feature));
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -197,6 +184,34 @@ public class JefConfig {
     }
 
     public static void openCurrentPetEditor() {
+        if (feature == null) return;
+        CurrentPetOverlay overlay = CurrentPetOverlay.getInstance();
+        if (overlay == null) return;
+        overlay.render(true);
+        screenToOpen = new GuiPositionEditor(
+                feature.misc.currentPetPos,
+                overlay::getOverlayWidth,
+                overlay::getOverlayHeight,
+                () -> overlay.render(true),
+                JefConfig::saveConfig,
+                JefConfig::saveConfig
+        ).withOverlayScale(feature.misc.currentPetScale)
+                .withParent(Minecraft.getMinecraft().currentScreen);
+    }
+
+    public static void openGyroWandEditor() {
+        if (feature == null) return;
+        GyroWandOverlay overlay = GyroWandOverlay.getInstance();
+        if (overlay == null) return;
+        screenToOpen = new GuiPositionEditor(
+                feature.general.gyroWandPos,
+                overlay::getOverlayWidth,
+                overlay::getOverlayHeight,
+                () -> overlay.render(true),
+                JefConfig::saveConfig,
+                JefConfig::saveConfig
+        ).withOverlayScale(feature.general.gyroWandScale)
+                .withParent(Minecraft.getMinecraft().currentScreen);
     }
 
     @SubscribeEvent
@@ -213,16 +228,13 @@ public class JefConfig {
             }
         }
 
-        if (openGuiKey.isPressed() && Minecraft.getMinecraft().currentScreen == null) {
-            openGui();
-        }
+        if (openGuiKey.isPressed() && Minecraft.getMinecraft().currentScreen == null) openGui();
 
         boolean managerKeyDown = feature != null
                 && feature.waypoints.waypointManagerKey != org.lwjgl.input.Keyboard.KEY_NONE
                 && org.lwjgl.input.Keyboard.isKeyDown(feature.waypoints.waypointManagerKey);
-        if (managerKeyDown && !waypointManagerKeyWasDown && Minecraft.getMinecraft().currentScreen == null) {
+        if (managerKeyDown && !waypointManagerKeyWasDown && Minecraft.getMinecraft().currentScreen == null)
             openWaypointGroupGui();
-        }
         waypointManagerKeyWasDown = managerKeyDown;
     }
 }

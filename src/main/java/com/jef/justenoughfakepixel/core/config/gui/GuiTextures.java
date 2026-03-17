@@ -2,7 +2,6 @@ package com.jef.justenoughfakepixel.core.config.gui;
 
 import net.minecraft.util.ResourceLocation;
 
-/** All GUI texture {@link ResourceLocation}s used by the config system. */
 public final class GuiTextures {
 
     private GuiTextures() {}

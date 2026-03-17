@@ -13,9 +13,28 @@ public final class RenderUtils {
 
     private RenderUtils() {}
 
-    // -------------------------------------------------------------------------
-    // Floating rect variants
-    // -------------------------------------------------------------------------
+    public static void drawWorldCircle(double radius, int steps, float lineWidth, float r, float g, float b, float a) {
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+        GlStateManager.disableDepth();
+        GL11.glLineWidth(lineWidth);
+        GL11.glColor4f(r, g, b, a);
+
+        Tessellator tess = Tessellator.getInstance();
+        WorldRenderer wr = tess.getWorldRenderer();
+        wr.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION);
+        for (int i = 0; i <= steps; i++) {
+            double angle = (Math.PI * 2) * i / steps;
+            wr.pos(Math.cos(angle) * radius, 0, Math.sin(angle) * radius).endVertex();
+        }
+        tess.draw();
+
+        GL11.glColor4f(1f, 1f, 1f, 1f);
+        GlStateManager.enableDepth();
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+    }
 
     public static void drawFloatingRectDark(int x, int y, int width, int height) {
         drawFloatingRectDark(x, y, width, height, true);
@@ -63,10 +82,6 @@ public final class RenderUtils {
         Gui.drawRect(left + width-1, top,          left + width,     top + height,     0xff28282E);
         Gui.drawRect(left,           top + height-1, left + width,   top + height,     0xff28282E);
     }
-
-    // -------------------------------------------------------------------------
-    // Textured rect
-    // -------------------------------------------------------------------------
 
     public static void drawTexturedRect(float x, float y, float width, float height) {
         drawTexturedRect(x, y, width, height, 0, 1, 0, 1);
@@ -120,9 +135,6 @@ public final class RenderUtils {
         t.draw();
     }
 
-    // -------------------------------------------------------------------------
-    // Gradient rect
-    // -------------------------------------------------------------------------
 
     public static void drawGradientRect(int zLevel, int left, int top, int right, int bottom,
                                         int startColor, int endColor) {

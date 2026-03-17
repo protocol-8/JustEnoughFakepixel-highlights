@@ -103,7 +103,7 @@ public class Misc {
     @ConfigOption(name = "Background Color", desc = "Background color of the pet overlay (alpha controls opacity)")
     @ConfigEditorColour
     @ConfigAccordionId(id = 11)
-    public String currentPetBgColor = "0:136:0:0:0";
+    public String currentPetBgColor = "0:0:0:0:0";
 
     @Expose
     @ConfigOption(name = "Corner Radius", desc = "Roundness of the pet overlay corners")
@@ -115,7 +115,7 @@ public class Misc {
     @ConfigOption(name = "Scale", desc = "Size of the pet overlay")
     @ConfigEditorSliderAnnotation(minValue = 0.5f, maxValue = 3f, minStep = 0.1f)
     @ConfigAccordionId(id = 11)
-    public float currentPetScale = 1f;
+    public float currentPetScale = 1.5f;
 
     @Expose
     @ConfigOption(name = "Edit Position", desc = "Drag to reposition the pet overlay")
@@ -130,7 +130,7 @@ public class Misc {
     public Position hudPos = new Position(2, 2);
 
     @Expose
-    public Position currentPetPos = new Position(4, 4);
+    public Position currentPetPos = new Position(18, 14);
 
     @Expose
     @ConfigOption(name = "Item Stack Tips", desc = "Shows enchant levels on books and floor numbers on Catacombs passes")
@@ -150,10 +150,10 @@ public class Misc {
     @Expose
     @ConfigOption(name = "Show Own Nametag", desc = "Shows your own nametag in third person")
     @ConfigEditorBoolean
-    public boolean showOwnNametag = false;
+    public boolean showOwnNametag = true;
 
     @Expose
     @ConfigOption(name = "Disable Entity Fire", desc = "Hides the fire overlay rendered on burning entities")
     @ConfigEditorBoolean
-    public boolean disableEntityFire = false;
+    public boolean disableEntityFire = true;
 }

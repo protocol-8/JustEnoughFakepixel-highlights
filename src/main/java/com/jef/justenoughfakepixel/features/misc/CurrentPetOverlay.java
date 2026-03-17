@@ -51,6 +51,13 @@ public class CurrentPetOverlay extends JefOverlay {
     }
 
     @Override
+    protected int getBaseWidth() {
+        Minecraft mc = Minecraft.getMinecraft();
+        String previewName = "\u00a76[Lvl 100] Tiger";
+        return SKULL_SIZE + GAP + mc.fontRendererObj.getStringWidth(previewName) + PADDING * 2;
+    }
+
+    @Override
     public List<String> getLines(boolean preview) {
         return Collections.emptyList();
     }

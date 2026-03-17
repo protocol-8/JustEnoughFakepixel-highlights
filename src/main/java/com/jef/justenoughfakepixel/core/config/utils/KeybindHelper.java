@@ -26,13 +26,11 @@ public final class KeybindHelper {
         return keyCode != 0;
     }
 
-    /** Returns {@code true} while the key/button is held down (poll-based). */
     public static boolean isKeyDown(int keyCode) {
         if (!isKeyValid(keyCode)) return false;
         return keyCode < 0 ? Mouse.isButtonDown(keyCode + 100) : Keyboard.isKeyDown(keyCode);
     }
 
-    /** Returns {@code true} on the exact event frame the key/button is pressed (event-based). */
     public static boolean isKeyPressed(int keyCode) {
         if (!isKeyValid(keyCode)) return false;
         return keyCode < 0

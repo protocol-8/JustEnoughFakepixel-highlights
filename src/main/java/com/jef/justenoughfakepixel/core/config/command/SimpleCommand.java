@@ -7,10 +7,6 @@ import net.minecraft.util.BlockPos;
 
 import java.util.*;
 
-/**
- * Package-private abstract base for commands, wrapping CommandBase with sensible defaults.
- * Extended by {@link JefCommand}.
- */
 public abstract class SimpleCommand extends CommandBase {
 
     private static final Set<String> SLASH_ONLY = new HashSet<>();

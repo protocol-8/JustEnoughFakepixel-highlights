@@ -56,11 +56,9 @@ public class GuiOptionEditorButton extends GuiOptionEditor {
 
     private void invokeRunnable(String id) {
         try {
-            // CHANGED: Reflection bridge keeps button functionality for any config model implementing executeRunnable(String).
             Method method = config.getClass().getMethod("executeRunnable", String.class);
             method.invoke(config, id);
         } catch (Exception ignored) {
-            // CHANGED: Standalone template intentionally ignores missing executeRunnable implementation.
         }
     }
 

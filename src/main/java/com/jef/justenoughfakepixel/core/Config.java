@@ -44,6 +44,7 @@ public class Config {
             case "openDianaOverlayEditor":   JefConfig.openDianaOverlayEditor();    break;
             case "openSearchBarEditor":   JefConfig.openSearchBarEditor();    break;
             case "openCurrentPetEditor": JefConfig.openCurrentPetEditor();    break;
+            case "openGyroWandEditor": JefConfig.openGyroWandEditor(); break;
         }
     }
 }

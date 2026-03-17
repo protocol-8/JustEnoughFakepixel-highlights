@@ -9,12 +9,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.util.function.Consumer;
 
-/**
- * Standalone slider widget. Renders using 5 texture pieces from {@link GuiTextures}:
- * on/off caps, on/off segments, on/off notches, and a thumb button.
- *
- * <p>Three notches are drawn at 25 %, 50 %, and 75 % positions.
- */
+
 public class GuiElementSlider extends GuiElement {
 
     public int x, y, width;

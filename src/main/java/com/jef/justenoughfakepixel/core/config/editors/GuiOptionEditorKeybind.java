@@ -15,7 +15,6 @@ import static com.jef.justenoughfakepixel.core.config.gui.GuiTextures.button_tex
 
 public class GuiOptionEditorKeybind extends GuiOptionEditor {
 
-    // CHANGED: Removed dependency on global Resources enum for standalone GUI template.
     private static final ResourceLocation RESET = new ResourceLocation("justenoughfakepixel:core/reset.png");
 
     private int keyCode;

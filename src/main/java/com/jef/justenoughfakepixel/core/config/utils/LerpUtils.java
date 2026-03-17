@@ -1,14 +1,6 @@
 package com.jef.justenoughfakepixel.core.config.utils;
 
-/**
- * Lerp math utilities plus time-based animated value types.
- *
- * <p>Nested classes:
- * <ul>
- *   <li>{@link LerpingInteger} – integer value that animates smoothly toward a target</li>
- *   <li>{@link LerpingFloat}   – float equivalent</li>
- * </ul>
- */
+
 public final class LerpUtils {
 
     private LerpUtils() {}

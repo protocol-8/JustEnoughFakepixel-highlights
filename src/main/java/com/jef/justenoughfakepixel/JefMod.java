@@ -3,11 +3,14 @@ package com.jef.justenoughfakepixel;
 import com.jef.justenoughfakepixel.data.ApiHandler;
 import com.jef.justenoughfakepixel.core.JefConfig;
 import com.jef.justenoughfakepixel.core.config.command.SimpleCommandFilter;
+import com.jef.justenoughfakepixel.data.ApiHandler;
 import com.jef.justenoughfakepixel.features.diana.*;
 import com.jef.justenoughfakepixel.features.dungeons.BloodMobDisplay;
 import com.jef.justenoughfakepixel.features.dungeons.DungeonStats;
 import com.jef.justenoughfakepixel.features.general.CursorResetHandler;
 import com.jef.justenoughfakepixel.features.general.DamageSplashes;
+import com.jef.justenoughfakepixel.features.general.GyroWandHelper;
+import com.jef.justenoughfakepixel.features.general.GyroWandOverlay;
 import com.jef.justenoughfakepixel.features.general.SkyblockIdTooltip;
 import com.jef.justenoughfakepixel.features.mining.FetchurOverlay;
 import com.jef.justenoughfakepixel.features.misc.*;
@@ -56,7 +59,6 @@ public class JefMod {
     public void preInit(FMLPreInitializationEvent event) {
         JefConfig.init();
         JefRepo.init();
-
         WaypointStorage.getInstance().initFile(JefConfig.configDirectory);
         DianaStats.getInstance().initFile(JefConfig.configDirectory);
         MaxwellPowerSync.getInstance().initFile(JefConfig.configDirectory);
@@ -77,7 +79,6 @@ public class JefMod {
             PetCache.getInstance().warmupTextures();
 
         MinecraftForge.EVENT_BUS.register(this);
-
         MinecraftForge.EVENT_BUS.register(new SearchBar());
         MinecraftForge.EVENT_BUS.register(MaxwellPowerSync.getInstance());
         MinecraftForge.EVENT_BUS.register(new DamageSplashes());
@@ -96,6 +97,8 @@ public class JefMod {
         MinecraftForge.EVENT_BUS.register(new BrewingStandHelper());
         MinecraftForge.EVENT_BUS.register(new ItemStackUtils());
         MinecraftForge.EVENT_BUS.register(new CursorResetHandler());
+        MinecraftForge.EVENT_BUS.register(new GyroWandOverlay());
+        MinecraftForge.EVENT_BUS.register(new GyroWandHelper());
         MinecraftForge.EVENT_BUS.register(new DianaTracker());
         MinecraftForge.EVENT_BUS.register(new DianaMobDetect());
         MinecraftForge.EVENT_BUS.register(new DianaEventOverlay());
