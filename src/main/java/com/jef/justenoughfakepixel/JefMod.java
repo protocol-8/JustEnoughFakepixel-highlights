@@ -8,6 +8,8 @@ import com.jef.justenoughfakepixel.features.dungeons.BloodMobDisplay;
 import com.jef.justenoughfakepixel.features.dungeons.DungeonStats;
 import com.jef.justenoughfakepixel.features.general.CursorResetHandler;
 import com.jef.justenoughfakepixel.features.general.DamageSplashes;
+import com.jef.justenoughfakepixel.features.farming.LockMouse;
+import com.jef.justenoughfakepixel.features.farming.LockMouseCommand;
 import com.jef.justenoughfakepixel.features.general.EnchantProcessor;
 import com.jef.justenoughfakepixel.features.general.GyroWandHelper;
 import com.jef.justenoughfakepixel.features.general.GyroWandOverlay;
@@ -110,6 +112,8 @@ public class JefMod {
         MinecraftForge.EVENT_BUS.register(new DianaMobHealthOverlay());
         MinecraftForge.EVENT_BUS.register(CurrentPetTracker.getInstance());
         MinecraftForge.EVENT_BUS.register(new CurrentPetOverlay());
+        MinecraftForge.EVENT_BUS.register(new LockMouse());
+        ClientCommandHandler.instance.registerCommand(new LockMouseCommand());
         ClientCommandHandler.instance.registerCommand(new DianaCommand());
         ClientCommandHandler.instance.registerCommand(new WaypointCommand());
     }

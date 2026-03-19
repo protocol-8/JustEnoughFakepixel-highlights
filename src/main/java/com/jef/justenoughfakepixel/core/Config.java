@@ -34,6 +34,10 @@ public class Config {
     @Category(name = "Dungeons", desc = "Dungeon features")
     public final Dungeons dungeons = new Dungeons();
 
+    @Expose
+    @Category(name = "Farming", desc = "Farming features")
+    public final Farming farming = new Farming();
+
     public void executeRunnable(String runnableId) {
         switch (runnableId) {
             case "openScoreboardEditor":  JefConfig.openScoreboardEditor();   break;

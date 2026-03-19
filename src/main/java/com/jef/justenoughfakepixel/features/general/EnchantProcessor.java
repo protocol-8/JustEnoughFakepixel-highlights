@@ -9,11 +9,13 @@ import com.jef.justenoughfakepixel.utils.ColorUtils;
 import com.jef.justenoughfakepixel.utils.RomanNumeralParser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import org.lwjgl.input.Mouse;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -21,12 +23,12 @@ import java.util.regex.Pattern;
 
 public class EnchantProcessor {
 
-    private static final Pattern ENCHANT_PATTERN =
-            Pattern.compile("(?<name>[A-Za-z][A-Za-z -]+) (?<level>[IVXLCDM]+|\\d+)(?=, |$| [\\d,]+$)");
+    private static final Pattern ENCHANTMENT_PATTERN = Pattern.compile("(?<enchant>[A-Za-z][A-Za-z -]+) (?<levelNumeral>[IVXLCDM]+|\\d+)(?=, |$| [\\d,]+$)");
+    private static final Pattern GREY_ENCHANT_PATTERN = Pattern.compile("^(Respiration|Aqua Affinity|Depth Strider|Efficiency).*");
     private static final String COMMA = ", ";
 
-    private static final Map<String, EnchantMeta> ENCHANTS_BY_LORE = new HashMap<>();
-    private static final Map<String, EnchantMeta> ENCHANTS_BY_NBT = new HashMap<>();
+    private static final Map<String, EnchantMeta> BY_LORE = new HashMap<>();
+    private static final Cache LORE_CACHE = new Cache();
     private static boolean loaded;
 
     @SubscribeEvent(priority = EventPriority.LOW)
@@ -35,35 +37,107 @@ public class EnchantProcessor {
         if (!JefConfig.feature.general.enchantHighlight) return;
 
         ensureLoaded();
-        if (ENCHANTS_BY_LORE.isEmpty()) return;
+        if (BY_LORE.isEmpty()) return;
 
-        Set<String> presentEnchantIds = getPresentEnchantIds(event.itemStack);
-        int[] range = findEnchantRange(event.toolTip);
-        if (range[0] < 0 || range[1] < range[0]) return;
+        NBTTagCompound enchantNBT = getEnchantNBT(event.itemStack);
+        if (enchantNBT != null && enchantNBT.hasNoTags()) return;
 
-        List<FormattedEnchant> parsed = parseEnchants(event.toolTip, range[0], range[1], presentEnchantIds);
-        if (parsed.isEmpty()) return;
+        List<String> loreList = event.toolTip;
+        if (LORE_CACHE.isCached(loreList)) {
+            loreList.clear();
+            loreList.addAll(LORE_CACHE.cachedAfter);
+            return;
+        }
+        LORE_CACHE.updateBefore(loreList);
+        FontRenderer fontRenderer = Minecraft.getMinecraft().fontRendererObj;
 
-        parsed.sort(Comparator
-                .comparingInt((FormattedEnchant e) -> e.meta.sortType)
-                .thenComparing(e -> e.meta.loreName));
+        int startEnchant = -1, endEnchant = -1, maxTooltipWidth = 0;
 
-        List<String> rebuilt = buildLayout(parsed);
-        if (rebuilt.isEmpty()) return;
+        int indexOfLastGreyEnchant = accountForAndRemoveGreyEnchants(loreList, event.itemStack);
+        for (int i = indexOfLastGreyEnchant == -1 ? 0 : indexOfLastGreyEnchant + 1; i < loreList.size(); i++) {
+            String line = loreList.get(i);
+            String stripped = ColorUtils.stripColor(line);
+            if (startEnchant == -1) {
+                if (containsEnchantment(enchantNBT, stripped)) startEnchant = i;
+            } else if (stripped.trim().isEmpty() && endEnchant == -1) {
+                endEnchant = i - 1;
+            }
+            if (startEnchant == -1 || endEnchant != -1) {
+                maxTooltipWidth = Math.max(fontRenderer.getStringWidth(line), maxTooltipWidth);
+            }
+        }
 
-        event.toolTip.subList(range[0], range[1] + 1).clear();
-        event.toolTip.addAll(range[0], rebuilt);
+        if (startEnchant == -1) {
+            LORE_CACHE.updateAfter(loreList);
+            return;
+        }
+        if (enchantNBT == null && endEnchant == -1) endEnchant = startEnchant;
+        if (endEnchant == -1) {
+            LORE_CACHE.updateAfter(loreList);
+            return;
+        }
+
+        maxTooltipWidth = correctTooltipWidth(maxTooltipWidth);
+
+        TreeSet<FormattedEnchant> orderedEnchants = new TreeSet<>();
+        FormattedEnchant lastEnchant = null;
+        boolean hasLore = false;
+
+        for (int i = startEnchant; i <= endEnchant && i < loreList.size(); i++) {
+            String unformattedLine = ColorUtils.stripColor(loreList.get(i));
+            Matcher m = ENCHANTMENT_PATTERN.matcher(unformattedLine);
+            boolean containsEnchant = false;
+            while (m.find()) {
+                String loreName = m.group("enchant").trim().toLowerCase(Locale.US);
+                EnchantMeta meta = BY_LORE.get(loreName);
+                if (meta == null) continue;
+                int level = parseLevel(m.group("levelNumeral"));
+                lastEnchant = new FormattedEnchant(meta, level);
+                orderedEnchants.add(lastEnchant);
+                containsEnchant = true;
+            }
+            if (!containsEnchant && lastEnchant != null) {
+                lastEnchant.lore.add(loreList.get(i));
+                hasLore = true;
+            }
+        }
+
+        if (orderedEnchants.isEmpty()) {
+            LORE_CACHE.updateAfter(loreList);
+            return;
+        }
+
+        loreList.subList(startEnchant, endEnchant + 1).clear();
+        List<String> insertEnchants = buildLayout(new ArrayList<>(orderedEnchants), hasLore, maxTooltipWidth);
+        loreList.addAll(startEnchant, insertEnchants);
+        LORE_CACHE.updateAfter(loreList);
+    }
+
+    private NBTTagCompound getEnchantNBT(ItemStack stack) {
+        if (stack == null || !stack.hasTagCompound()) return null;
+        NBTTagCompound extra = stack.getTagCompound().getCompoundTag("ExtraAttributes");
+        return extra.hasKey("enchantments", 10) ? extra.getCompoundTag("enchantments") : null;
+    }
+
+    private boolean containsEnchantment(NBTTagCompound enchantNBT, String line) {
+        Matcher m = ENCHANTMENT_PATTERN.matcher(line);
+        while (m.find()) {
+            EnchantMeta meta = BY_LORE.get(m.group("enchant").trim().toLowerCase(Locale.US));
+            if (meta == null) continue;
+            if (enchantNBT == null || enchantNBT.hasKey(meta.nbtName)) return true;
+        }
+        return false;
     }
 
     private void ensureLoaded() {
         if (loaded) return;
         loaded = true;
-        loadSbaEnchantMeta();
+        loadMetadata("/assets/justenoughfakepixel/enchants/enchants.json");
     }
 
-    private void loadSbaEnchantMeta() {
+    private void loadMetadata(String path) {
         try (Scanner scanner = new Scanner(Objects.requireNonNull(
-                EnchantProcessor.class.getResourceAsStream("/assets/justenoughfakepixel/enchants/enchants.json")
+                EnchantProcessor.class.getResourceAsStream(path)
         ), "UTF-8")) {
             String json = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
             JsonObject root = new JsonParser().parse(json).getAsJsonObject();
@@ -87,54 +161,14 @@ public class EnchantProcessor {
                         obj.get("maxLevel").getAsInt(),
                         sortType
                 );
-                ENCHANTS_BY_LORE.put(meta.loreName.toLowerCase(Locale.US), meta);
-                ENCHANTS_BY_NBT.put(meta.nbtName, meta);
+                BY_LORE.put(meta.loreName.toLowerCase(Locale.US), meta);
             } catch (Exception ignored) {
             }
         }
     }
 
-    private int[] findEnchantRange(List<String> tooltip) {
-        int start = -1, end = -1;
-        for (int i = 1; i < tooltip.size(); i++) {
-            String clean = ColorUtils.stripColor(tooltip.get(i)).trim();
-            boolean lineHasEnchant = ENCHANT_PATTERN.matcher(clean).find();
-            if (start == -1) {
-                if (lineHasEnchant) start = i;
-            } else {
-                if (!lineHasEnchant && clean.isEmpty()) {
-                    end = i - 1;
-                    break;
-                }
-                if (lineHasEnchant) end = i;
-            }
-        }
-        if (start != -1 && end == -1) end = start;
-        return new int[]{start, end};
-    }
-
-    private List<FormattedEnchant> parseEnchants(List<String> tooltip, int start, int end, Set<String> presentIds) {
-        List<FormattedEnchant> out = new ArrayList<>();
-        for (int i = start; i <= end; i++) {
-            String clean = ColorUtils.stripColor(tooltip.get(i));
-            Matcher m = ENCHANT_PATTERN.matcher(clean);
-            while (m.find()) {
-                String loreName = m.group("name").trim();
-                int level = parseLevel(m.group("level"));
-                EnchantMeta meta = ENCHANTS_BY_LORE.get(loreName.toLowerCase(Locale.US));
-                if (meta == null) {
-                    String rawId = loreName.toLowerCase(Locale.US).replace(' ', '_');
-                    meta = ENCHANTS_BY_NBT.get(rawId);
-                }
-                if (meta == null) continue;
-                if (!presentIds.isEmpty() && !presentIds.contains(meta.nbtName)) continue;
-                out.add(new FormattedEnchant(meta, level));
-            }
-        }
-        return out;
-    }
-
     private int parseLevel(String raw) {
+        if (raw == null || raw.isEmpty()) return 1;
         if (raw.chars().allMatch(Character::isDigit)) return Integer.parseInt(raw);
         try {
             return RomanNumeralParser.parse(raw);
@@ -143,50 +177,91 @@ public class EnchantProcessor {
         }
     }
 
-    private Set<String> getPresentEnchantIds(ItemStack stack) {
-        if (stack == null || !stack.hasTagCompound()) return Collections.emptySet();
-        NBTTagCompound extra = stack.getTagCompound().getCompoundTag("ExtraAttributes");
-        if (extra == null || !extra.hasKey("enchantments", 10)) return Collections.emptySet();
-        Set<String> out = new HashSet<>();
-        for (String key : extra.getCompoundTag("enchantments").getKeySet()) {
-            out.add(key.toLowerCase(Locale.US));
+    private int accountForAndRemoveGreyEnchants(List<String> tooltip, ItemStack item) {
+        if (item == null || item.getEnchantmentTagList() == null || item.getEnchantmentTagList().tagCount() == 0) return -1;
+        int lastGreyEnchant = -1;
+        int total = 0;
+        boolean removeGreyEnchants = true;
+        for (int i = 1; total < 1 + item.getEnchantmentTagList().tagCount() && i < tooltip.size(); total++) {
+            String line = tooltip.get(i);
+            if (GREY_ENCHANT_PATTERN.matcher(line).matches()) {
+                lastGreyEnchant = i;
+                if (removeGreyEnchants) tooltip.remove(i);
+            } else {
+                i++;
+            }
         }
-        return out;
+        return removeGreyEnchants ? -1 : lastGreyEnchant;
     }
 
-    private List<String> buildLayout(List<FormattedEnchant> entries) {
-        int layout = JefConfig.feature.general.enchantLayout;
-        if (layout == 2) {
-            List<String> lines = new ArrayList<>(entries.size());
-            for (FormattedEnchant entry : entries) lines.add(entry.formatted());
-            return lines;
-        }
-
-        if (layout == 1 && entries.size() > 1) {
-            FontRenderer fr = Minecraft.getMinecraft().fontRendererObj;
-            int maxWidth = 180;
-            List<String> lines = new ArrayList<>();
-            StringBuilder line = new StringBuilder();
-            for (FormattedEnchant entry : entries) {
-                String next = entry.formatted();
-                String candidate = line.length() == 0 ? next : line + grayComma() + next;
-                if (line.length() > 0 && fr.getStringWidth(candidate) > maxWidth) {
-                    lines.add(line.toString());
-                    line = new StringBuilder(next);
-                } else {
-                    line = new StringBuilder(candidate);
-                }
+    private int correctTooltipWidth(int maxTooltipWidth) {
+        final ScaledResolution scaled = new ScaledResolution(Minecraft.getMinecraft());
+        final int mouseX = Mouse.getX() * scaled.getScaledWidth() / Minecraft.getMinecraft().displayWidth;
+        int tooltipX = mouseX + 12;
+        if (tooltipX + maxTooltipWidth + 4 > scaled.getScaledWidth()) {
+            tooltipX = mouseX - 16 - maxTooltipWidth;
+            if (tooltipX < 4) {
+                if (mouseX > scaled.getScaledWidth() / 2) maxTooltipWidth = mouseX - 12 - 8;
+                else maxTooltipWidth = scaled.getScaledWidth() - 16 - mouseX;
             }
-            if (line.length() > 0) lines.add(line.toString());
-            return lines;
+        }
+        if (scaled.getScaledWidth() > 0 && maxTooltipWidth > scaled.getScaledWidth()) {
+            maxTooltipWidth = scaled.getScaledWidth();
+        }
+        return maxTooltipWidth;
+    }
+
+    private List<String> buildLayout(List<FormattedEnchant> enchants, boolean hasLore, int maxWidth) {
+        List<String> out = new ArrayList<>();
+        int layout = JefConfig.feature.general.enchantLayout;
+
+        if (layout == 1 && enchants.size() > 1) {
+            FontRenderer fr = Minecraft.getMinecraft().fontRendererObj;
+            int commaLength = fr.getStringWidth(grayComma());
+            int sum = 0;
+            StringBuilder builder = new StringBuilder();
+            for (FormattedEnchant enchant : enchants) {
+                if (sum + enchant.renderLength() > maxWidth && builder.length() > 0) {
+                    builder.delete(builder.length() - grayComma().length(), builder.length());
+                    out.add(builder.toString());
+                    builder = new StringBuilder();
+                    sum = 0;
+                }
+                builder.append(enchant.formatted()).append(grayComma());
+                sum += enchant.renderLength() + commaLength;
+            }
+            if (builder.length() >= grayComma().length()) {
+                builder.delete(builder.length() - grayComma().length(), builder.length());
+                out.add(builder.toString());
+            }
+            return out;
         }
 
-        List<String> lines = new ArrayList<>((entries.size() + 1) / 2);
-        for (int i = 0; i < entries.size(); i += 2) {
-            if (i + 1 < entries.size()) lines.add(entries.get(i).formatted() + grayComma() + entries.get(i + 1).formatted());
-            else lines.add(entries.get(i).formatted());
+        if (layout == 0 && !hasLore) {
+            StringBuilder builder = new StringBuilder();
+            int i = 0;
+            for (FormattedEnchant enchant : enchants) {
+                builder.append(enchant.formatted());
+                if (i % 2 == 0) {
+                    builder.append(grayComma());
+                } else {
+                    out.add(builder.toString());
+                    builder = new StringBuilder();
+                }
+                i++;
+            }
+            if (builder.length() >= grayComma().length()) {
+                builder.delete(builder.length() - grayComma().length(), builder.length());
+                out.add(builder.toString());
+            }
+            return out;
         }
-        return lines;
+
+        for (FormattedEnchant enchant : enchants) {
+            out.add(enchant.formatted());
+            out.addAll(enchant.lore);
+        }
+        return out;
     }
 
     private String grayComma() {
@@ -230,9 +305,7 @@ public class EnchantProcessor {
         return "§" + codes[best];
     }
 
-    private long sq(long x) {
-        return x * x;
-    }
+    private long sq(long x) { return x * x; }
 
     private String toRoman(int number) {
         int[] values = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
@@ -240,17 +313,15 @@ public class EnchantProcessor {
         StringBuilder out = new StringBuilder();
         int n = Math.max(1, number);
         for (int i = 0; i < values.length; i++) {
-            while (n >= values[i]) {
-                n -= values[i];
-                out.append(numerals[i]);
-            }
+            while (n >= values[i]) { n -= values[i]; out.append(numerals[i]); }
         }
         return out.toString();
     }
 
-    private class FormattedEnchant {
+    private class FormattedEnchant implements Comparable<FormattedEnchant> {
         private final EnchantMeta meta;
         private final int level;
+        private final List<String> lore = new ArrayList<>();
 
         private FormattedEnchant(EnchantMeta meta, int level) {
             this.meta = meta;
@@ -260,6 +331,16 @@ public class EnchantProcessor {
         private String formatted() {
             String lvl = JefConfig.feature.general.romanNumerals ? Integer.toString(level) : toRoman(level);
             return formatColor(meta, level) + meta.loreName + " " + lvl;
+        }
+
+        private int renderLength() {
+            return Minecraft.getMinecraft().fontRendererObj.getStringWidth(formatted());
+        }
+
+        @Override
+        public int compareTo(FormattedEnchant o) {
+            if (this.meta.sortType != o.meta.sortType) return Integer.compare(this.meta.sortType, o.meta.sortType);
+            return this.meta.loreName.compareTo(o.meta.loreName);
         }
     }
 
@@ -276,6 +357,22 @@ public class EnchantProcessor {
             this.goodLevel = goodLevel;
             this.maxLevel = maxLevel;
             this.sortType = sortType;
+        }
+    }
+
+    private static class Cache {
+        private List<String> cachedBefore = new ArrayList<>();
+        private List<String> cachedAfter = new ArrayList<>();
+
+        private void updateBefore(List<String> loreBefore) { cachedBefore = new ArrayList<>(loreBefore); }
+        private void updateAfter(List<String> loreAfter) { cachedAfter = new ArrayList<>(loreAfter); }
+
+        private boolean isCached(List<String> loreBefore) {
+            if (loreBefore.size() != cachedBefore.size()) return false;
+            for (int i = 0; i < loreBefore.size(); i++) {
+                if (!Objects.equals(loreBefore.get(i), cachedBefore.get(i))) return false;
+            }
+            return true;
         }
     }
 }

@@ -11,7 +11,6 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.StringUtils;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
-import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
@@ -46,7 +45,6 @@ public class CurrentPetTracker {
 
     private File file;
     private String currentBaseName = "";
-    private boolean scannedCurrentContainer = false;
 
     public void initFile(File configDir) {
         file = new File(configDir, "current_pet.json");
@@ -79,13 +77,7 @@ public class CurrentPetTracker {
     }
 
     @SubscribeEvent
-    public void onGuiOpen(GuiOpenEvent event) {
-        scannedCurrentContainer = false;
-    }
-
-    @SubscribeEvent
     public void onGuiDraw(GuiScreenEvent.BackgroundDrawnEvent event) {
-        if (scannedCurrentContainer) return;
         if (!(event.gui instanceof GuiChest)) return;
         if (!(((GuiChest) event.gui).inventorySlots instanceof ContainerChest)) return;
 
@@ -93,7 +85,6 @@ public class CurrentPetTracker {
         String title = container.getLowerChestInventory().getDisplayName().getUnformattedText();
         if (!title.startsWith(PETS_CONTAINER)) return;
 
-        scannedCurrentContainer = true;
         scanContainer(container);
     }
 

@@ -25,7 +25,7 @@ public class General {
 
 
     @Expose
-    @ConfigOption(name = "kms", desc = "Settings for enchants and layout")
+    @ConfigOption(name = "Enchant Parser", desc = "Settings for enchants and layout")
     @ConfigEditorAccordion(id = 21)
     public boolean enchantHighlightAccordion = false;
 

@@ -25,7 +25,7 @@ public class FetchurHelper {
     };
 
     private static final Calendar CALENDAR =
-            new GregorianCalendar(TimeZone.getTimeZone("America/New_York"));
+            new GregorianCalendar(TimeZone.getTimeZone("utc"));
 
     public static String getTodaysItem() {
         CALENDAR.setTimeInMillis(System.currentTimeMillis());
