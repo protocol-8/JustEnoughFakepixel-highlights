@@ -223,4 +223,9 @@ public class Misc {
     @ConfigOption(name = "Disable Entity Fire", desc = "Hides the fire overlay rendered on burning entities")
     @ConfigEditorBoolean
     public boolean disableEntityFire = true;
+
+    @Expose
+    @ConfigOption(name = "SkyBlock XP in Chat", desc = "Sends SkyBlock XP gains from the action bar into chat")
+    @ConfigEditorBoolean
+    public boolean skyblockXpInChat = false;
 }

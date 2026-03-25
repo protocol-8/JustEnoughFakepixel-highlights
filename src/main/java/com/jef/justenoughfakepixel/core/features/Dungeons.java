@@ -9,7 +9,6 @@ import java.util.Map;
 
 public class Dungeons {
 
-    // ── Blood Room ────────────────────────────────────────────────────────────
 
     @Expose
     @ConfigOption(name = "Blood Mob Highlight", desc = "Highlight blood room mobs. Box = bounding box, Outline = body glow, Off = disabled")
@@ -21,7 +20,6 @@ public class Dungeons {
     @ConfigEditorColour
     public String bloodMobColor = "200:255:50:50:255";
 
-    // ── Boss Highlights ───────────────────────────────────────────────────────
 
     @Expose
     @ConfigOption(name = "Boss Highlights", desc = "Highlight dungeon bosses and their minions")
@@ -76,7 +74,6 @@ public class Dungeons {
     @ConfigAccordionId(id = 40)
     public String professorColor = "200:0:200:255:255";
 
-    // ── Dungeon Overlay ───────────────────────────────────────────────────────
 
     @Expose
     @ConfigOption(name = "Dungeon Overlay", desc = "Run timers, end-of-run stats and overlay settings")
@@ -115,6 +112,46 @@ public class Dungeons {
 
     @Expose
     public Position statsPos = new Position(4, 100);
+
+
+    @Expose
+    @ConfigOption(name = "Dungeon Breaker Overlay", desc = "Shows Dungeon Breaker charges while in dungeons")
+    @ConfigEditorAccordion(id = 42)
+    public boolean dungeonBreakerAccordion = false;
+
+    @Expose
+    @ConfigOption(name = "Enable", desc = "Show the Dungeon Breaker charge overlay (only visible in dungeons with the item in hotbar)")
+    @ConfigEditorBoolean
+    @ConfigAccordionId(id = 42)
+    public boolean dungeonBreakerOverlay = false;
+
+    @Expose
+    @ConfigOption(name = "Background Color", desc = "Background color of the overlay (alpha controls opacity; 0 = fully transparent)")
+    @ConfigEditorColour
+    @ConfigAccordionId(id = 42)
+    public String dungeonBreakerBgColor = "0:0:0:0:0";
+
+    @Expose
+    @ConfigOption(name = "Corner Radius", desc = "Roundness of overlay corners")
+    @ConfigEditorSliderAnnotation(minValue = 0f, maxValue = 12f, minStep = 1f)
+    @ConfigAccordionId(id = 42)
+    public int dungeonBreakerCornerRadius = 4;
+
+    @Expose
+    @ConfigOption(name = "Scale", desc = "Size of the Dungeon Breaker overlay")
+    @ConfigEditorSliderAnnotation(minValue = 0.5f, maxValue = 3f, minStep = 0.1f)
+    @ConfigAccordionId(id = 42)
+    public float dungeonBreakerScale = 1f;
+
+    @Expose
+    @ConfigOption(name = "Edit Position", desc = "Drag the overlay to reposition it")
+    @ConfigEditorButton(runnableId = "openDungeonBreakerEditor", buttonText = "Edit")
+    @ConfigAccordionId(id = 42)
+    public boolean editDungeonBreakerPosDummy = false;
+
+    @Expose
+    public Position dungeonBreakerPos = new Position(4, 120);
+
 
     @Expose
     public Map<String, Long> floorPbs = new HashMap<>();

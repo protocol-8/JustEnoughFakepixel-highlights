@@ -6,6 +6,7 @@ import com.jef.justenoughfakepixel.core.config.gui.config.ConfigEditor;
 import com.jef.justenoughfakepixel.core.config.gui.GuiScreenElementWrapper;
 import com.jef.justenoughfakepixel.core.config.command.JefCommand;
 import com.jef.justenoughfakepixel.core.config.editors.GuiPositionEditor;
+import com.jef.justenoughfakepixel.features.dungeons.DungeonBreakerOverlay;
 import com.jef.justenoughfakepixel.features.misc.SearchBar;
 import com.jef.justenoughfakepixel.features.diana.DianaEventOverlay;
 import com.jef.justenoughfakepixel.features.misc.ItemPickupLog;
@@ -246,6 +247,20 @@ public class JefConfig {
                 JefConfig::saveConfig,
                 JefConfig::saveConfig
         ).withOverlayScale(feature.mining.powderOverlayScale)
+                .withParent(Minecraft.getMinecraft().currentScreen);
+    }
+    public static void editDungeonBreakerPosDummy() {
+        if (feature == null) return;
+        DungeonBreakerOverlay overlay = DungeonBreakerOverlay.getInstance();
+        if (overlay == null) return;
+        screenToOpen = new GuiPositionEditor(
+                feature.dungeons.dungeonBreakerPos,
+                overlay::getOverlayWidth,
+                overlay::getOverlayHeight,
+                () -> overlay.render(true),
+                JefConfig::saveConfig,
+                JefConfig::saveConfig
+        ).withOverlayScale(feature.dungeons.dungeonBreakerScale)
                 .withParent(Minecraft.getMinecraft().currentScreen);
     }
 

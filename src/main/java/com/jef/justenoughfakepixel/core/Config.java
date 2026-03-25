@@ -57,6 +57,7 @@ public class Config {
             case "openPowderEditor":   JefConfig.openPowderEditor();   break;
             case "openInvButtonEditor": JefConfig.openInvButtonEditor(); break;
             case "resetPowderTracker": JefConfig.resetPowderTracker(); break;
+            case "openDungeonBreakerEditor": JefConfig.editDungeonBreakerPosDummy(); break;
         }
     }
 }
