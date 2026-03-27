@@ -73,4 +73,33 @@ public class Fishing {
 
     @Expose
     public Position trophyFishPos = new Position(4, 140);
+
+    @Expose
+    @ConfigOption(name = "Fishing Timer", desc = "Fishing timer overlay settings")
+    @ConfigEditorAccordion(id = 2)
+    public boolean fishingTimerAccordion = false;
+
+    @Expose
+    @ConfigOption(name = "Enable Timer", desc = "Show fishing timer while fishing")
+    @ConfigEditorBoolean
+    @ConfigAccordionId(id = 2)
+    public boolean fishingTimer = true;
+
+    @Expose
+    @ConfigOption(name = "Alert Time (seconds)", desc = "Time after which alert sound plays")
+    @ConfigEditorSliderAnnotation(minValue = 1f, maxValue = 60f, minStep = 1f)
+    @ConfigAccordionId(id = 2)
+    public int fishingTimerAlertTime = 15;
+
+    @Expose
+    @ConfigOption(name = "Normal Color", desc = "Text color before alert time")
+    @ConfigEditorColour
+    @ConfigAccordionId(id = 2)
+    public String fishingTimerNormalColor = "237:255:255:0:0";
+
+    @Expose
+    @ConfigOption(name = "Alert Color", desc = "Text color after alert time")
+    @ConfigEditorColour
+    @ConfigAccordionId(id = 2)
+    public String fishingTimerAlertColor = "0:255:255:246:0";
 }
