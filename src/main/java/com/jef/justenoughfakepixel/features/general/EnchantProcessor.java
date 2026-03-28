@@ -6,6 +6,8 @@ import com.google.gson.JsonParser;
 import com.jef.justenoughfakepixel.core.JefConfig;
 import com.jef.justenoughfakepixel.core.config.editors.ChromaColour;
 import com.jef.justenoughfakepixel.init.RegisterEvents;
+import com.jef.justenoughfakepixel.repo.JefRepo;
+import com.jef.justenoughfakepixel.repo.RepoHandler;
 import com.jef.justenoughfakepixel.utils.ColorUtils;
 import com.jef.justenoughfakepixel.utils.RomanNumeralParser;
 import net.minecraft.client.Minecraft;
@@ -31,7 +33,7 @@ public class EnchantProcessor {
 
     private static final Map<String, EnchantMeta> BY_LORE = new HashMap<>();
     private static final Cache LORE_CACHE = new Cache();
-    private static boolean loaded;
+    private static String lastLoadedJson = null;
 
     @SubscribeEvent(priority = EventPriority.LOW)
     public void onTooltip(ItemTooltipEvent event) {
@@ -132,16 +134,11 @@ public class EnchantProcessor {
     }
 
     private void ensureLoaded() {
-        if (loaded) return;
-        loaded = true;
-        loadMetadata("/assets/justenoughfakepixel/enchants/enchants.json");
-    }
-
-    private void loadMetadata(String path) {
-        try (Scanner scanner = new Scanner(Objects.requireNonNull(
-                EnchantProcessor.class.getResourceAsStream(path)
-        ), "UTF-8")) {
-            String json = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
+        String json = RepoHandler.getJson(JefRepo.KEY_ENCHANTS);
+        if (json == null || json.equals(lastLoadedJson)) return;
+        lastLoadedJson = json;
+        BY_LORE.clear();
+        try {
             JsonObject root = new JsonParser().parse(json).getAsJsonObject();
             loadSection(root, "NORMAL", 2);
             loadSection(root, "ULTIMATE", 0);
