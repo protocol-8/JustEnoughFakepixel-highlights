@@ -127,13 +127,13 @@ public class MissingEnchants {
     private List<String> buildMissingLines(List<String> missing) {
         List<String> result = new ArrayList<>();
         result.add("");
-        StringBuilder current = new StringBuilder("\u00A7cMissing: \u00A7f");
+        StringBuilder current = new StringBuilder("\u00A7cMissing: \u00A77");
         for (int i = 0; i < missing.size(); i++) {
             String name = toTitleCase(missing.get(i).replace("_", " "));
             String separator = (i < missing.size() - 1) ? ", " : "";
             if (current.length() > 10 && ColorUtils.stripColor(current.toString()).length() + name.length() > 40) {
                 result.add(current.toString());
-                current = new StringBuilder("\u00A7f" + name + separator);
+                current = new StringBuilder("\u00A77" + name + separator);
             } else {
                 current.append(name).append(separator);
             }
