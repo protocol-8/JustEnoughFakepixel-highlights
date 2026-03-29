@@ -50,7 +50,7 @@ public class WaterSolver {
         WOOL_ORDINAL.put(EnumDyeColor.PURPLE, 0);
         WOOL_ORDINAL.put(EnumDyeColor.ORANGE, 1);
         WOOL_ORDINAL.put(EnumDyeColor.BLUE,   2);
-        WOOL_ORDINAL.put(EnumDyeColor.LIME,   3); // "GREEN" in Odin
+        WOOL_ORDINAL.put(EnumDyeColor.LIME,   3);
         WOOL_ORDINAL.put(EnumDyeColor.RED,     4);
     }
 
@@ -62,8 +62,8 @@ public class WaterSolver {
     private static JsonObject solutionsJson = null;
 
     private boolean inWaterRoom   = false;
-    private int     patternId     = -1;   // 0-3, detected from indicator blocks
-    private String  extendedSlots = null; // e.g. "024"
+    private int     patternId     = -1;
+    private String  extendedSlots = null;
     private boolean lastOptimized = false;
 
     private volatile Map<String, int[]> solutions = new HashMap<>();
@@ -91,7 +91,6 @@ public class WaterSolver {
 
         tickCounter++;
 
-        // Monitor water lever activation
         if (waterLeverPos != null && openedWaterTick == -1) {
             boolean powered = isLeverPowered(waterLeverPos);
             if (powered && !prevWaterPowered)
@@ -99,7 +98,6 @@ public class WaterSolver {
             prevWaterPowered = powered;
         }
 
-        // Monitor individual lever clicks (state flip = click)
         for (Map.Entry<String, BlockPos> entry : leverPositions.entrySet()) {
             String key = entry.getKey();
             BlockPos pos = entry.getValue();
@@ -111,7 +109,6 @@ public class WaterSolver {
             prevPowered.put(key, powered);
         }
 
-        // Scan for room every second
         if (++scanTick % 20 != 0) return;
         new Thread(this::detectWaterRoom).start();
     }
@@ -126,15 +123,11 @@ public class WaterSolver {
         double vy = mc.getRenderManager().viewerPosY;
         double vz = mc.getRenderManager().viewerPosZ;
 
-        // Build pending list as (BlockPos, tickOffset) pairs.
-        // "water" is resolved to waterLeverPos directly — avoids indexOf("water")==0 bug
-        // that was mapping water entries to quartz_block position.
-        List<Object[]> pending = new ArrayList<>(); // [BlockPos, Integer tickOffset]
+        List<Object[]> pending = new ArrayList<>();
         for (Map.Entry<String, int[]> entry : solutions.entrySet()) {
             String key = entry.getKey();
             int[] times = entry.getValue();
             if (key.equals("water")) {
-                // Water lever: only show until it has been activated
                 if (openedWaterTick == -1 && waterLeverPos != null) {
                     for (int t : times)
                         pending.add(new Object[]{ waterLeverPos, t });
@@ -149,7 +142,6 @@ public class WaterSolver {
         }
         pending.sort(Comparator.comparingInt(a -> (int) a[1]));
 
-        // Boxes for all pending positions
         WorldRenderUtils.beginWorldRender(2f);
         GL11.glPushMatrix();
         GL11.glTranslated(-vx, -vy, -vz);
@@ -161,7 +153,6 @@ public class WaterSolver {
         GL11.glPopMatrix();
         WorldRenderUtils.endWorldRender();
 
-        // Tracer to the next target
         if (!pending.isEmpty()) {
             BlockPos nextPos = (BlockPos) pending.get(0)[0];
             WorldRenderUtils.drawTracer(
@@ -169,7 +160,6 @@ public class WaterSolver {
                     event.partialTicks, java.awt.Color.GREEN);
         }
 
-        // Disable lighting so §colour codes render correctly (endWorldRender re-enables it)
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glPushMatrix();
         GL11.glTranslated(-vx, -vy, -vz);
@@ -270,7 +260,6 @@ public class WaterSolver {
                 found.add(mc.theWorld.getBlockState(woolPos).getValue(BlockColored.COLOR));
         }
 
-        // Return in Odin's ordinal order (PURPLE, ORANGE, BLUE, LIME, RED)
         List<EnumDyeColor> sorted = new ArrayList<>();
         for (EnumDyeColor c : new EnumDyeColor[]{
                 EnumDyeColor.PURPLE, EnumDyeColor.ORANGE,
@@ -298,7 +287,6 @@ public class WaterSolver {
             if (isTargetBlock(name)) {
                 result.put(name, pos);
             } else if (facing == EnumFacing.UP) {
-                // Water lever sits on top of smooth andesite, facing up
                 IBlockState belowState = mc.theWorld.getBlockState(behind);
                 if (belowState.getBlock() == Blocks.stone
                         && belowState.getValue(BlockStone.VARIANT) == BlockStone.EnumType.ANDESITE_SMOOTH) {
