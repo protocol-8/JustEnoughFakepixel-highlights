@@ -217,6 +217,11 @@ public class Misc {
     public boolean itemStackTips = true;
 
     @Expose
+    @ConfigOption(name = "Party Finder Floor Tip", desc = "Shows floor label (F1-F7, M1-M7) on listings in the Party Finder")
+    @ConfigEditorBoolean
+    public boolean partyFinderFloorTip = true;
+
+    @Expose
     @ConfigOption(name = "Skill XP Display", desc = "Hold SHIFT on a skill item to see XP remaining to max level")
     @ConfigEditorBoolean
     public boolean skillXpDisplay = true;

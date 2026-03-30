@@ -12,6 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.init.Items;
 import net.minecraft.inventory.ContainerChest;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -30,15 +31,25 @@ public class ItemStackUtils {
     }
 
     private String getTip(ItemStack stack) {
-        String id = ItemUtils.getInternalName(stack);
-        if (id.isEmpty()) id = null;
-        if (id == null) return null;
+        if (JefConfig.feature == null) return null;
 
-        if (id.equals("ENCHANTED_BOOK") && JefConfig.feature.misc.itemStackTips) {
+        if (JefConfig.feature.misc.partyFinderFloorTip && isInContainer("Party Finder")) {
+            if (stack.getItem() == Items.skull) {
+                return getPartyFinderFloor(stack);
+            }
+            return null;
+        }
+
+        if (!JefConfig.feature.misc.itemStackTips) return null;
+
+        String id = ItemUtils.getInternalName(stack);
+        if (id.isEmpty()) return null;
+
+        if (id.equals("ENCHANTED_BOOK")) {
             return getEnchantLevel(stack);
         }
 
-        if (JefConfig.feature.misc.itemStackTips && isInContainer("Catacombs Gate")) {
+        if (isInContainer("Catacombs Gate")) {
             return getDungeonFloor(id);
         }
 
@@ -72,6 +83,37 @@ public class ItemStackUtils {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private String getPartyFinderFloor(ItemStack stack) {
+        java.util.List<String> lore = ItemUtils.getLoreLines(stack);
+        if (lore.isEmpty()) return null;
+
+        boolean master = false;
+        String floorLabel = null;
+
+        for (String line : lore) {
+            String stripped = ColorUtils.stripColor(line).trim();
+
+            if (stripped.startsWith("Dungeon: ")) {
+                String dungeon = stripped.substring("Dungeon: ".length()).trim();
+                master = dungeon.equals("Master Catacombs");
+
+            } else if (stripped.startsWith("Floor: ")) {
+                String value = stripped.substring("Floor: ".length()).trim();
+                if (value.equals("Entrance")) {
+                    floorLabel = "ENT";
+                } else if (value.startsWith("Floor ")) {
+                    String numeral = value.substring("Floor ".length()).trim();
+                    int n = RomanNumeralParser.parse(numeral);
+                    if (n >= 1 && n <= 7) floorLabel = String.valueOf(n);
+                }
+            }
+        }
+
+        if (floorLabel == null) return null;
+        if (floorLabel.equals("ENT")) return "ENT";
+        return (master ? "M" : "F") + floorLabel;
     }
 
     private static void drawTip(String tip, int x, int y) {

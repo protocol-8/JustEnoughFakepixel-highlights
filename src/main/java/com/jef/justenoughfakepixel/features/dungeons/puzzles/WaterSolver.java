@@ -310,7 +310,7 @@ public class WaterSolver {
         }
 
         try {
-            boolean optimized = JefConfig.feature.dungeons.waterSolverOptimized;
+            boolean optimized = false;
             JsonObject bySlots = solutionsJson
                     .getAsJsonObject(String.valueOf(optimized))
                     .getAsJsonObject(String.valueOf(patternId))
