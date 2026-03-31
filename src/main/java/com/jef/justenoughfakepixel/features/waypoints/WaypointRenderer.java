@@ -106,27 +106,40 @@ public class WaypointRenderer {
 
     private void drawLabel(double wx, double wy, double wz, String text) {
         if (mc.thePlayer == null || mc.fontRendererObj == null) return;
-        double dx = wx - mc.thePlayer.posX, dy = wy - mc.thePlayer.posY, dz = wz - mc.thePlayer.posZ;
-        double dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-        float scale = Math.max(0.025f, (float)(Math.min(dist, 50.0) / 300.0));
+
+        double dx = wx - mc.thePlayer.posX;
+        double dy = wy - mc.thePlayer.posY;
+        double dz = wz - mc.thePlayer.posZ;
+        double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        float scale = Math.max(0.025f, (float) (Math.min(dist, 50.0) / 300.0));
 
         String nameStr = StringUtils.stripControlCodes(text);
         String distStr = (int) Math.round(dist) + "m";
-        int totalW = mc.fontRendererObj.getStringWidth(nameStr + " " + distStr);
+
+        int nameW = mc.fontRendererObj.getStringWidth(nameStr);
+        int distW = mc.fontRendererObj.getStringWidth(distStr);
+        int totalW = nameW + mc.fontRendererObj.getStringWidth(" ") + distW;
+
+        int nameColor = labelColor() | 0xFF000000;
+        int distColor = distanceLabelColor() | 0xFF000000;
 
         GL11.glPushMatrix();
         GL11.glTranslated(wx, wy, wz);
         GL11.glRotatef(-mc.getRenderManager().playerViewY, 0f, 1f, 0f);
-        GL11.glRotatef( mc.getRenderManager().playerViewX, 1f, 0f, 0f);
+        GL11.glRotatef(mc.getRenderManager().playerViewX, 1f, 0f, 0f);
         GL11.glScalef(-scale, -scale, scale);
-        GlStateManager.color(1f, 1f, 1f, 1f);
+
+        GlStateManager.disableLighting();
+        GlStateManager.disableDepth();
+
         float sx = -totalW / 2f;
-        mc.fontRendererObj.drawStringWithShadow(nameStr, sx, 0f, labelColor());
-        mc.fontRendererObj.drawStringWithShadow(distStr,
-                sx + mc.fontRendererObj.getStringWidth(nameStr + " "), 0f, distanceLabelColor());
+        mc.fontRendererObj.drawString(nameStr, sx, 0f, nameColor, false);
+        mc.fontRendererObj.drawString(distStr, sx + nameW + mc.fontRendererObj.getStringWidth(" "), 0f, distColor, false);
+
+        GlStateManager.enableDepth();
         GL11.glPopMatrix();
     }
-
     private String safeName(WaypointPoint wp, String fallback) {
         return (wp.name != null && !wp.name.isEmpty()) ? wp.name : fallback;
     }

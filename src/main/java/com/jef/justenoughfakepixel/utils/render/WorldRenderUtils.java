@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.StringUtils;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.Vec3;
 import org.lwjgl.opengl.GL11;
@@ -102,22 +103,15 @@ public final class WorldRenderUtils {
         GL11.glPopMatrix();
     }
 
-    public static void drawSelectionBox(BlockPos pos, Color color, float lineWidth) {
+    public static void drawSelectionBox(AxisAlignedBB aabb, Color color, float lineWidth) {
         double vx = mc.getRenderManager().viewerPosX;
         double vy = mc.getRenderManager().viewerPosY;
         double vz = mc.getRenderManager().viewerPosZ;
 
-        double x = pos.getX() - vx;
-        double y = pos.getY() - vy;
-        double z = pos.getZ() - vz;
+        double x0 = aabb.minX - vx, y0 = aabb.minY - vy, z0 = aabb.minZ - vz;
+        double x1 = aabb.maxX - vx, y1 = aabb.maxY - vy, z1 = aabb.maxZ - vz;
 
         int r = color.getRed(), g = color.getGreen(), b = color.getBlue(), a = color.getAlpha();
-
-        final double[][] edges = {
-                {0,0,0,1,0,0},{0,0,1,1,0,1},{0,0,0,0,0,1},{1,0,0,1,0,1},
-                {0,1,0,1,1,0},{0,1,1,1,1,1},{0,1,0,0,1,1},{1,1,0,1,1,1},
-                {0,0,0,0,1,0},{1,0,0,1,1,0},{0,0,1,0,1,1},{1,0,1,1,1,1}
-        };
 
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
         GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -133,10 +127,21 @@ public final class WorldRenderUtils {
         Tessellator tess = Tessellator.getInstance();
         WorldRenderer wr = tess.getWorldRenderer();
         wr.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
-        for (double[] e : edges) {
-            wr.pos(x + e[0], y + e[1], z + e[2]).color(r, g, b, a).endVertex();
-            wr.pos(x + e[3], y + e[4], z + e[5]).color(r, g, b, a).endVertex();
-        }
+        // Bottom face
+        wr.pos(x0,y0,z0).color(r,g,b,a).endVertex(); wr.pos(x1,y0,z0).color(r,g,b,a).endVertex();
+        wr.pos(x1,y0,z0).color(r,g,b,a).endVertex(); wr.pos(x1,y0,z1).color(r,g,b,a).endVertex();
+        wr.pos(x1,y0,z1).color(r,g,b,a).endVertex(); wr.pos(x0,y0,z1).color(r,g,b,a).endVertex();
+        wr.pos(x0,y0,z1).color(r,g,b,a).endVertex(); wr.pos(x0,y0,z0).color(r,g,b,a).endVertex();
+        // Top face
+        wr.pos(x0,y1,z0).color(r,g,b,a).endVertex(); wr.pos(x1,y1,z0).color(r,g,b,a).endVertex();
+        wr.pos(x1,y1,z0).color(r,g,b,a).endVertex(); wr.pos(x1,y1,z1).color(r,g,b,a).endVertex();
+        wr.pos(x1,y1,z1).color(r,g,b,a).endVertex(); wr.pos(x0,y1,z1).color(r,g,b,a).endVertex();
+        wr.pos(x0,y1,z1).color(r,g,b,a).endVertex(); wr.pos(x0,y1,z0).color(r,g,b,a).endVertex();
+        // Verticals
+        wr.pos(x0,y0,z0).color(r,g,b,a).endVertex(); wr.pos(x0,y1,z0).color(r,g,b,a).endVertex();
+        wr.pos(x1,y0,z0).color(r,g,b,a).endVertex(); wr.pos(x1,y1,z0).color(r,g,b,a).endVertex();
+        wr.pos(x1,y0,z1).color(r,g,b,a).endVertex(); wr.pos(x1,y1,z1).color(r,g,b,a).endVertex();
+        wr.pos(x0,y0,z1).color(r,g,b,a).endVertex(); wr.pos(x0,y1,z1).color(r,g,b,a).endVertex();
         tess.draw();
 
         GL11.glPopMatrix();
@@ -144,7 +149,7 @@ public final class WorldRenderUtils {
         GL11.glColor4f(1f, 1f, 1f, 1f);
     }
 
-    public static void drawFilledBlocks(List<BlockPos> blocks, Color color) {
+    public static void drawFilledBlocks(List<AxisAlignedBB> blocks, Color color) {
         if (blocks == null || blocks.isEmpty() || mc.getRenderManager() == null) return;
 
         double vx = mc.getRenderManager().viewerPosX;
@@ -183,15 +188,15 @@ public final class WorldRenderUtils {
         WorldRenderer wr = tess.getWorldRenderer();
         wr.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
 
-        for (BlockPos pos : blocks) {
+        for (AxisAlignedBB aabb : blocks) {
 
-            double x0 = pos.getX() - eps;
-            double y0 = pos.getY() - eps;
-            double z0 = pos.getZ() - eps;
+            double x0 = aabb.minX - eps;
+            double y0 = aabb.minY - eps;
+            double z0 = aabb.minZ - eps;
 
-            double x1 = pos.getX() + 1 + eps;
-            double y1 = pos.getY() + 1 + eps;
-            double z1 = pos.getZ() + 1 + eps;
+            double x1 = aabb.maxX + eps;
+            double y1 = aabb.maxY + eps;
+            double z1 = aabb.maxZ + eps;
 
             // Bottom
             wr.pos(x0, y0, z0).color(r, g, b, a).endVertex();
@@ -244,8 +249,14 @@ public final class WorldRenderUtils {
         GL11.glPopAttrib();
     }
 
+    public static void drawFilledBlock(AxisAlignedBB aabb, Color color) {
+        drawFilledBlocks(java.util.Collections.singletonList(aabb), color);
+    }
+
     public static void drawFilledBlock(BlockPos pos, Color color) {
-        drawFilledBlocks(java.util.Collections.singletonList(pos), color);
+        AxisAlignedBB aabb = new AxisAlignedBB(pos.getX(), pos.getY(), pos.getZ(),
+                pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1);
+        drawFilledBlocks(java.util.Collections.singletonList(aabb), color);
     }
 
     public static void beginWorldRender(float lineWidth) {
