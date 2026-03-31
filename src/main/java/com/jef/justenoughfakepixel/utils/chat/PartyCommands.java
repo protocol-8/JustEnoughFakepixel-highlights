@@ -1,6 +1,7 @@
 package com.jef.justenoughfakepixel.utils.chat;
 
 import com.jef.justenoughfakepixel.features.diana.DianaTracker;
+import com.jef.justenoughfakepixel.JefMod;
 import com.jef.justenoughfakepixel.features.dungeons.overlays.DungeonStats;
 import com.jef.justenoughfakepixel.init.RegisterEvents;
 import net.minecraft.client.Minecraft;
@@ -18,6 +19,9 @@ public class PartyCommands {
     private static final long HELP_COOLDOWN_MS = 10_000L;
     private long lastHelpMs = 0L;
 
+    private static String getJefVersion() {
+        return "JustEnoughFakepixel v" + JefMod.VERSION;
+    }
     private final Minecraft mc = Minecraft.getMinecraft();
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
@@ -41,6 +45,7 @@ public class PartyCommands {
         }
 
         switch (body) {
+            case "!jef":     respond(getJefVersion());                  break;
             case "!burrows": respond(DianaTracker.getBorrowsMessage()); break;
             case "!inq":     respond(DianaTracker.getInqMessage());     break;
             case "!mobs":    respond(DianaTracker.getMobsMessage());    break;
